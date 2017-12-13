@@ -20,7 +20,7 @@
     "express": "^4.16.2",
     "fs-extra": "^4.0.2",
     "globby": "^7.1.1",
-    "md2vue": "^3.0.0-alpha",
+    "md2vue": "^3.0.0-beta",
     "object-assign": "^4.1.1",
     "ora": "^1.3.0",
     "postcss-import": "^11.0.0",
