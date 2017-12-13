@@ -1,0 +1,6 @@
+example/
+site/
+src/
+*.sublime-project
+*.sublime-workspace
+dokiv.yml

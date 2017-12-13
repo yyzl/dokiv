@@ -58,7 +58,4 @@ typings/
 .env
 
 site/
-*.sublime-project
-*.sublime-workspace
-example/
-dokiv.yml
+dist/
