@@ -26,7 +26,7 @@ export default function createApp ({
     routes,
     scrollBehavior: () => ({ x: 0, y: 0 })
   }
-  
+
   if (url) {
     data.url = url
   }
@@ -49,7 +49,7 @@ export default function createApp ({
   router.onReady(() => {
     app.$mount('#app')
   })
-  
+
   return { app, router }
 }
 
