@@ -2,7 +2,7 @@
 output: ./site
 
 # layouts 文件目录
-layout: ./example/layouts
+layout: ./example/layouts/*.vue
 
 # layouts 文件目录
 plugins: ./example/plugins/*.js
