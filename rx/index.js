@@ -171,10 +171,11 @@ const metadata$ = documents$
 
 const routers$ = metadata$
   .map(arr => arr.map(
-      ({ component, layout, fullPath }) => JSON.stringify({
-        path: fullPath,
-        meta: { layout }
-      }).replace(/\}$/, `,"component":(${component})}`)
+      ({ component, layout, fullPath }) => `{
+        path: "${fullPath}",
+        component: (${component}),
+        meta: { layout: "${layout}" }
+      }`
     )
     .concat('{ path: "*", redirect: "/" }')
   )
@@ -226,9 +227,12 @@ const scripts$ = Observable
   }))
 
 const appHash$ = scripts$
-  .flatMap(({ browser, ssr }) => {
+  .do(({ ssr }) => {
+    vm.runInNewContext(ssr, sandBox)
+  })
+  .flatMap(({ browser, ssr }) => 
+  {
     const hash = revHash(browser)
-    fs.writeFileSync(`${outputDirectory}/ssr.js`, ssr)
     return fs.writeFile(`${staticDestination}/app.${hash}.js`, browser)
       .then(_ => hash)
   })
@@ -244,6 +248,6 @@ main$.take(1)
       hash,
       port: config.port,
       staticDir: staticDestination,
-      ssrConfig: require(`${outputDirectory}/ssr.js`)// sandBox.module.exports
+      ssrConfig: sandBox.module.exports
     })
   })
