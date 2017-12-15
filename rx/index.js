@@ -6,16 +6,7 @@ const {
   normalize
 } = require('path')
 
-const {
-  copy,
-  ensureDir,
-  existsSync,
-  readFileSync,
-  writeFileSync
-} = require('fs-extra')
-
-const { exec } = require('shelljs')
-
+const fs = require('fs-extra')
 const yaml = require('js-yaml')
 const globby = require('globby')
 const revHash = require('rev-hash')
@@ -29,6 +20,7 @@ const postCSS = require('./postCSS')
 const bundlePages = require('./bundlePages')
 const compilePlugin = require('./compilePlugin')
 const compileLayout = require('./compileLayout')
+const startServer = require('./startServer')
 
 const md2vue = require('./util/md2vue')
 const getMetadata = require('./util/getMetadata')
@@ -40,28 +32,34 @@ const cwd = process.cwd()
 const spinner = require('ora')('Loading unicorns')
 const configFile = resolve(cwd, './dokiv.yml')
 
-if (existsSync(configFile) === false) {
+if (fs.existsSync(configFile) === false) {
   spinner.warn('dokiv.yml not found under current working directory!')
   process.exit()
 }
 
-const config = yaml.safeLoad(readFileSync(configFile, 'utf8'))
+const vm = require('vm')
+const sandBox = { module: {} }
+
+const config = yaml.safeLoad(fs.readFileSync(configFile, 'utf8'))
 const outputDirectory = resolve(cwd, config.output)
 const staticSrcDirectory = resolve(cwd, config.staticDirectory)
 const staticDestination = join(outputDirectory, 'static')
 
 const isProd = process.env.NODE_ENV === 'production'
-const fs = isProd ? require('fs') : new MemoryFileSystem()
 process.env.isProd = isProd
 
 /**
- * file system
+ * prepare files & dirs
  */
-exec(`rm -rf ${outputDirectory}/**/**`)
-exec(`mkdir ${staticDestination}/`)
-// copy static files
-exec(`cp -R ${staticSrcDirectory} ${staticDestination}`)
-!isProd && fs.mkdirpSync(staticDestination)
+// fs.emptyDirSync(outputDirectory)
+// fs.ensureDirSync(staticDestination)
+// fs.copySync(staticSrcDirectory, staticDestination)
+/**
+ * preapre vendor
+ */
+const vendor = fs.readFileSync(resolve(__dirname, '../dist/bundle.js'))
+const vendorHash = revHash(vendor)
+fs.writeFileSync(`${staticDestination}/vendor.${vendorHash}.js`, vendor)
 
 /**
  * watch static directory
@@ -85,11 +83,12 @@ const styleBundle$ = fromPromise(postCSS(option)).switch()
  * plugins
  */
 const pluginBundle$ = rxWatchGlob({ globs: config.plugins })
-  .flatMap(({ change, map }) => {
+  .switchMap(({ change, map }) => {
     const { type, file, files, content } = change
 
     // add/change
     if (type !== 'unlink') {
+      console.log(`[Plugin ${type}]: ${file}`)
       return compilePlugin(file, content).then(data => {
         map.set(file, data)
         return map
@@ -137,21 +136,24 @@ const layoutBundle$ = rxWatchGlob({ globs: config.layout })
 /**
  * markdown documents
  */
-const documents$ = rxWatchGlob({ globs: config.documents })
+const documents$ = rxWatchGlob({
+    globs: config.documents,
+    throttleTime: 10
+  })
   .switchMap(({ change, map }) => {
     const { type, file, files, content } = change
 
     // add/change
     if (type !== 'unlink') {
+      console.log(`[File ${type}]: ${file}`)
       const metadata = getMetadata(file, content)
-
       return fromPromise(md2vue(metadata))
         .map(component => assign(metadata, { component }))
         .do(_ => map.set(file, { metadata }))
         .map(_ => map)
     }
 
-    // unlink
+    // unlink 
     file && map.delete(file)
     files && files.forEach(file => map.delete(file))
     return Promise.resolve(map)
@@ -193,7 +195,7 @@ staticfiles$
 
     if (event === 'addDir') {
       return fromPromise(
-        ensureDir(dest).then(_ => ret)
+        fs.ensureDir(dest).then(_ => ret)
       )
     } else {
       return Promise.resolve(ret)
@@ -201,15 +203,17 @@ staticfiles$
   })
   .subscribe(({ fullname, dest }) => {
     // copy file/dir on `change/add` event
-    copy(fullname, dest)
+    fs.copySync(fullname, dest)
   })
 
-styleBundle$.subscribe(code => {
-  const hash = revHash(code)
-  fs.writeFileSync(`${staticDestination}/vendor.${hash}.js`, code)
-})
+const styleHash$ = styleBundle$
+  .switchMap(code => {
+    const hash = revHash(code)
+    return fs.writeFile(`${staticDestination}/style.${hash}.css`, code)
+      .then(_ => hash)
+  })
 
-Observable
+const scripts$ = Observable
   .combineLatest(
     layoutBundle$,
     pluginBundle$,
@@ -220,7 +224,26 @@ Observable
     routers,
     code: [plugins, layouts]
   }))
-  .subscribe(({ srr, browser }) => {
+
+const appHash$ = scripts$
+  .flatMap(({ browser, ssr }) => {
     const hash = revHash(browser)
-    fs.writeFileSync(`${staticDestination}/app.${hash}.js`, browser)
+    fs.writeFileSync(`${outputDirectory}/ssr.js`, ssr)
+    return fs.writeFile(`${staticDestination}/app.${hash}.js`, browser)
+      .then(_ => hash)
+  })
+
+const main$ = styleHash$
+  .combineLatest(appHash$)
+  .map(([style, app]) => ({ style, app, vendor: vendorHash }))
+
+main$.take(1)
+  .subscribe((hash) => {
+    console.log('start server.....')
+    startServer({
+      hash,
+      port: config.port,
+      staticDir: staticDestination,
+      ssrConfig: require(`${outputDirectory}/ssr.js`)// sandBox.module.exports
+    })
   })

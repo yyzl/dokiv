@@ -2,6 +2,7 @@
 @import './theme.css';
 @import './demo-block.css';
 @import 'highlight.js/styles/github-gist.css';
+@import '../../lib/clair.css';
 
 .fade-enter-active, .fade-leave-active {
   transition: opacity .3s

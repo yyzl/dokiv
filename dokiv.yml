@@ -1,4 +1,4 @@
-
+port: 1126
 # router mode:
 #   `hash` or `history`
 routerMode: 'history'
@@ -24,9 +24,7 @@ plugins:
   - ./example/plugins/*.js
 
 # markdown files
-documents:
-  - ./example/**/*.md
-  - ./example/*.md
+documents: ./example/content/**/*.md
 
 # directory to find static files
 staticDirectory: ./example/static
