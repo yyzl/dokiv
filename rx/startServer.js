@@ -13,38 +13,29 @@ module.exports = async function ({
   staticDir,
   ssrConfig
 }) {
+  const { app, router } = createApp(ssrConfig)
+
   server.use('/static', express.static(staticDir))
   server.use('/favicon.ico', (_, res) => res.end())
 
-  server.get('*',  async ({ url }, res) => {
-    ssrConfig.el = "#app"
-    ssrConfig.data.url = url
+  server.get('*', async ({ url }, res) => {
+    router.push(url)
+    await new Promise(resolve => router.onReady(() => resolve()))
 
-    const { app, router } = createApp(ssrConfig)
-    const onRouterReady = () => {
-      const matchedComponents = router.getMatchedComponents()
-
-      if (matchedComponents.length === 0) {
-        res.status(404).end('<pre>Not found</pre>')
-      } else {
-        const respHead = getResponseHead(app, hash)
-        const respTail = getResponseTail(app, hash)
-        const stream = renderer.renderToStream(app)
-
-        stream.once('data', _ => res.write(respHead))
-        stream.on('data', chunk => res.write(chunk))
-        stream.on('end', _ => res.end(respTail))
-
-        stream.on('error', (error) => {
-          console.log(error)
-          res.status(500).end(`<pre>${error.stack}</pre>`)
-        })
-      }
+    if (!router.getMatchedComponents().length) {
+      return res.status(404).end('<pre>Not found</pre>')
     }
 
+    const stream = renderer.renderToStream(app)
+
+    stream.once('data', _ => res.write(getResponseHead(app, hash)))
+    stream.on('data', chunk => res.write(chunk))
+    stream.on('end', _ => res.end(getResponseTail(app, hash)))
+    stream.on('error', (error) => {
+      console.log(error)
+      res.status(500).end(`<pre>${error.stack}</pre>`)
+    })
     res.set('Content-Type', 'text/html')
-    router.push(url)
-    router.onReady(onRouterReady)
   })
 
   server.listen(port)
