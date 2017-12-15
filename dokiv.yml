@@ -1,18 +1,32 @@
+
+# router mode:
+#   `hash` or `history`
+routerMode: 'history'
+
 # dest directory
 output: ./site
 
-# layouts 文件目录
-layout: ./example/layouts/*.vue
+# styles
+postcss:
+  entry: ./example/assets/css/main.css
+  minify: true
+  sourcemap: true
+  plugins:
+    - postcss-import
+    - postcss-cssnext
 
-# layouts 文件目录
-plugins: ./example/plugins/*.js
+# layout files
+layout:
+  - ./example/layouts/*.vue
 
-# 静态文件如图片等
-static: ./example/static
+# plugin files
+plugins:
+  - ./example/plugins/*.js
 
-# markdown 文件
-docs:
+# markdown files
+documents:
   - ./example/**/*.md
+  - ./example/*.md
 
-# router mode: `hash` or `history`
-mode: 'history'
+# directory to find static files
+staticDirectory: ./example/static
