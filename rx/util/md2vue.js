@@ -1,18 +1,31 @@
 const md2vue = require('md2vue')
 const Prepack = require('prepack')
+const revHash = require('rev-hash')
+const LRU = require('lru-cache')
 
-module.exports = compileVue
+const prodEnv = require('./prodEnv')
+
+const lrucCache = new LRU()
 
 /**
  * compile markdown to precompiled vue component
  */
-async function compileVue ({
+module.exports = function compileVue ({
   title,
   markdown,
   componentName
 }) {
-  let id = 0
+  const hash = revHash(markdown)
+  const cache = lrucCache.get(hash) || {}
+  const hit = cache.code &&
+    (cache.title === title &&
+      cache.name === componentName)
 
+  if (hit) {
+    return Promise.resolve(cache.code)
+  }
+
+  let id = 0
   // FIXME
   const customMarkups = () => {
     const uid = `${componentName}-${id++}`
@@ -32,28 +45,24 @@ async function compileVue ({
     metaInfo: new Function(`return { title: "${title}" }`)
   }
 
-  process.env.__VUE_ENV = process.env.VUE_ENV
-  process.env.__NODE_ENV = process.env.NODE_ENV
-  process.env.VUE_ENV = 'browser'
-  process.env.NODE_ENV = 'production'
-
-  const raw = await md2vue(markdown, {
+  const conf = {
     target: 'js',
     highlight: 'highlight.js',
     documentInfo,
     componentName,
     customMarkups
-  })
+  }
 
-  process.env.VUE_ENV = process.env.__VUE_ENV
-  process.env.NODE_ENV = process.env.__NODE_ENV
-
-  const { code } = Prepack.prepack(raw)
-
-  return `
-(function(){
+  return Promise.resolve(prodEnv.set())
+    .then(() => md2vue(markdown, conf))
+    .then((raw) => {
+      prodEnv.restore()
+      const code = `(function(){
   var ${componentName} = null;
-  ${code};
+  ${Prepack.prepack(raw).code};
   return ${componentName};
 })()`
+      lrucCache.set(hash, { title, code, name: componentName })
+      return code
+    })
 }

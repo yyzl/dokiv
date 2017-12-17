@@ -45,15 +45,23 @@ class GlobResultFile {
   }
 }
 
-module.exports = function watchRx (pattern, options) {
-  options = options || {}
-  const basedir = options.cwd || process.cwd()
-
+const watcherCache = new Map()
+module.exports = function watchRx (pattern, { basedir }) {
   return Observable
     .create((observer) => {
-      const isFinished = false
+      let isFinished = false
+      let watcher = null
+      const key = `@@${[].concat(pattern).join('@')}`
+      const cache = watcherCache.get(key)
 
-      const watcher = chokidar.watch(pattern, options)
+      if (cache) {
+        watcher = cache
+      } else {
+        watcher = chokidar.watch(pattern)
+        // watcher.removeAllListeners()
+        watcherCache.set(key, watcher)
+      }
+
       const nextItem = (event) => (name) => observer.next(Object.assign(new GlobResultFile(), {
         event,
         basedir,
@@ -80,6 +88,7 @@ module.exports = function watchRx (pattern, options) {
       // https://github.com/paulmillr/chokidar/issues/434
       function closeWatcher () {
         watcher.close()
+        watcherCache.delete(key)
       }
     })
 }

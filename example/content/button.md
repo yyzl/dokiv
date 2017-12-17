@@ -1,5 +1,5 @@
 ---
-title: 图标
+title: 图标2
 layout: component
 scrollTop: true
 route: component/icon

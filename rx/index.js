@@ -1,253 +1,274 @@
 const {
   join,
-  basename,
-  resolve,
-  relative,
-  normalize
+  resolve
 } = require('path')
 
-const fs = require('fs-extra')
-const yaml = require('js-yaml')
-const globby = require('globby')
-const revHash = require('rev-hash')
-const MemoryFileSystem = require('memory-fs')
-
-const { Observable } = require('rxjs')
-const rxWatchGlob = require('rx-watch-glob')
-const rxWatch = require('rx-watch-glob/lib/rxWatch')
-
-const postCSS = require('./postCSS')
-const bundlePages = require('./bundlePages')
-const compilePlugin = require('./compilePlugin')
-const compileLayout = require('./compileLayout')
-const startServer = require('./startServer')
-
-const md2vue = require('./util/md2vue')
-const getMetadata = require('./util/getMetadata')
-
-const assign = Object.assign
-const { fromPromise } = Observable
-
-const cwd = process.cwd()
-const spinner = require('ora')('Loading unicorns')
-const configFile = resolve(cwd, './dokiv.yml')
-
-if (fs.existsSync(configFile) === false) {
-  spinner.warn('dokiv.yml not found under current working directory!')
-  process.exit()
-}
+const {
+  existsSync,
+  readFile,
+  writeFile,
+  writeFileSync,
+  emptyDir,
+  ensureDir,
+  ensureFileSync,
+  copy
+} = require('fs-extra')
 
 const vm = require('vm')
-const sandBox = { module: {} }
+const yaml = require('js-yaml')
+const LRU = require("lru-cache")
+const revHash = require('rev-hash')
 
-const config = yaml.safeLoad(fs.readFileSync(configFile, 'utf8'))
-const outputDirectory = resolve(cwd, config.output)
-const staticSrcDirectory = resolve(cwd, config.staticDirectory)
-const staticDestination = join(outputDirectory, 'static')
+const isEqual = require('lodash.isequal')
+const getNpmPrefix = require('find-npm-prefix')
 
-const isProd = process.env.NODE_ENV === 'production'
-process.env.isProd = isProd
+const { Observable } = require('rxjs')
+const { fromPromise, combineLatest } = Observable
 
-/**
- * prepare files & dirs
- */
-// fs.emptyDirSync(outputDirectory)
-// fs.ensureDirSync(staticDestination)
-// fs.copySync(staticSrcDirectory, staticDestination)
-/**
- * preapre vendor
- */
-const vendor = fs.readFileSync(resolve(__dirname, '../dist/bundle.js'))
-const vendorHash = revHash(vendor)
-fs.writeFileSync(`${staticDestination}/vendor.${vendorHash}.js`, vendor)
+const logger = require('./util/logger')
+const md2vue = require('./util/md2vue')
+const rxWatch = require('./util/rxWatch')
+const devServer = require('./util/devServer')
+const bundlePages = require('./util/bundlePages')
+const getMetadata = require('./util/getMetadata')
+const compileLayout = require('./compileLayout')
+const compilePlugin = require('./compilePlugin')
 
-/**
- * watch static directory
- */
-const staticfiles$ = rxWatch(staticSrcDirectory)
-
-/**
- * styles
- */
-const postcss = config.postcss
-const option = {
-  input: globby.sync(postcss.entry)[0],
-  minify: postcss.minify,
-  sourcemap: postcss.sourcemap,
-  plugins: postcss.plugins,
-  watch: true
+const noop = () => {}
+const sandBox = {
+  console: new Proxy({}, {
+    get () {
+      return noop
+    }
+  }),
+  module: {}
 }
-const styleBundle$ = fromPromise(postCSS(option)).switch()
 
-/**
- * plugins
- */
-const pluginBundle$ = rxWatchGlob({ globs: config.plugins })
-  .switchMap(({ change, map }) => {
-    const { type, file, files, content } = change
+process.env.DOCKIV_ENV = process.env.NODE_ENV
 
-    // add/change
-    if (type !== 'unlink') {
-      console.log(`[Plugin ${type}]: ${file}`)
-      return compilePlugin(file, content).then(data => {
-        map.set(file, data)
-        return map
-      })
+const lruCache = new LRU()
+
+const npmPrefix$ = fromPromise(getNpmPrefix(process.cwd()))
+const configuration$ = npmPrefix$
+  .map(prefix => [prefix, join(prefix, 'dokiv.yml')])
+  .flatMap(([prefix, file]) => {
+    if (existsSync(file) === false) {
+      return Observable.throw(`dokiv.yml ` +
+        `not found under current working directory!`
+      )
+    }
+    return rxWatch(file, { basedir: prefix })
+  })
+  .flatMap(({ event, fullname }) => {
+    if (event === 'add' || event === 'change') {
+      return readFile(fullname)
+        .then(content => {
+          const hash = revHash(content)
+          const cache = lruCache.get(hash)
+          if (cache) {
+            return cache
+          } else {
+            const ret = yaml.safeLoad(content)
+            lruCache.set(hash, ret)
+            return ret
+          }
+        })
+    }
+    return Observable.throw('dokiv.yaml was removed!')
+  })
+  .distinctUntilChanged(isEqual)
+  .combineLatest(npmPrefix$)
+  .flatMap(([conf, prefix]) => {
+    const {
+      rootDir = prefix,
+      output = resolve(prefix, 'dokiv'),
+      documents = []
+    } = conf
+
+    conf.npmPrefix = prefix
+    conf.globs = {
+      layouts: resolve(prefix, rootDir, 'layouts/*.vue'),
+      plugins: resolve(prefix, rootDir, 'plugins/*.js'),
+      documents: [].concat(documents).map(f => resolve(prefix, f))
     }
 
-    // unlink
-    file && map.delete(file)
-    files && files.forEach(file => map.delete(file))
-    return Promise.resolve(map)
+    conf.output = resolve(prefix, output)
+    conf.staticSource = resolve(prefix, rootDir, 'static')
+    conf.staticOutput = resolve(prefix, output, 'static')
+
+    // vendor bundle
+    const bundle = resolve(__dirname, '../dist/bundle.js')
+    return readFile(bundle)
+      .then(content => {
+        const hash = revHash(content)
+        conf.vendor = { hash, content }
+        return conf
+      })
   })
-  .debounceTime(100)
-  .map(map => Array.from(map.values()))
+
+const vendorHash$ = configuration$
+  // prepare files & dirs
+  .switchMap(({
+    staticSource,
+    staticOutput,
+    output,
+    vendor
+  }) => emptyDir(output)
+    .then(() => ensureDir(staticOutput))
+    .then(() => copy(staticSource, staticOutput))
+    .then(() => {
+      const { hash, content } = vendor
+      writeFile(`${staticOutput}/vendor.${hash}.js`, content)
+      return hash
+    })
+  )
+
+const pluginBundle$ = configuration$
+  .flatMap(conf => {
+    const { globs: { plugins }, npmPrefix } = conf
+    return rxWatch(plugins, { basedir: npmPrefix })
+  })
+  .map(({ event, fullname }) => {
+    return { event, file: fullname }
+  })
+  .scan((map, { event, file }, index) => {
+    logger.info(`Plugin ${event.replace(/e?$/, 'ed')}: ${file}`)
+
+    if (index === 0) {
+      map = new Map()
+    }
+
+    if (event === 'unlink') {
+      map.delete(file)
+    } else if (event === 'add' || event === 'change') {
+      map.set(file, compilePlugin(file))
+    }
+    return map
+  }, null)
+  .flatMap(map => Promise.all(
+      Array.from(map.keys())
+        .map(file => map.get(file))
+    )
+  )
   .map(data => {
-    const joinAt = (key, symbol = '\n') => data.map(item => item[key]).join(symbol)
-    return joinAt('code') + `;var Plugins = [${joinAt('name', ', ')}];`
+    let code = data.map(({ code }) => code).join('\n')
+    code += `\nvar Plugins = [`
+    code += data.map(({ name }) => `typeof ${name} !== 'undefined' && ${name}`).join(',\n')
+    code += '\n]'
+    return code
   })
 
-/**
- * layouts
- */
-const layoutBundle$ = rxWatchGlob({ globs: config.layout })
-  .switchMap(({ change, map }) => {
-    const { type, file, files, content } = change
+const layoutBundle$ = configuration$
+  .flatMap(conf => {
+    const { globs: { layouts }, npmPrefix } = conf
+    return rxWatch(layouts, { basedir: npmPrefix })
+  })
+  .map(({ event, fullname }) => {
+    return { event, file: fullname }
+  })
+  .scan((map, { event, file }, index) => {
+    logger.info(`Layout ${event.replace(/e?$/, 'ed')}: ${file}`)
+    if (index === 0) {
+      map = new Map()
+    }
 
-    // add/change
-    if (type !== 'unlink') {
-      return compileLayout(file, content).then(content => {
-        map.set(file, { content })
-        return map
+    if (event === 'unlink') {
+      map.delete(file)
+    } else if (event === 'add' || event === 'change') {
+      map.set(file, compileLayout(file))
+    }
+    return map
+  }, null)
+  .flatMap(map => Promise.all(
+      Array.from(map.keys())
+        .map(file => map.get(file))
+    )
+  )
+  .map(data => `var Layout = {${data.join(',\n')}};`)
+
+const documents$ = configuration$
+  .flatMap(conf => {
+    const { globs: { documents }, npmPrefix } = conf
+    return rxWatch(documents, { basedir: npmPrefix })
+  })
+  .map(({ event, fullname }) => {
+    return { event, file: fullname }
+  })
+  .scan((map, { event, file }, index) => {
+    logger.info(`File ${event.replace(/e?$/, 'ed')}: ${file}`)
+    if (index === 0) {
+      map = new Map()
+    }
+
+    if (event === 'unlink') {
+      map.delete(file)
+    } else if (event === 'add' || event === 'change') {
+      const metadata = getMetadata(file)
+      map.set(file, {
+        metadata,
+        code$: md2vue(metadata)
       })
     }
-
-    // unlink
-    file && map.delete(file)
-    files && files.forEach(file => map.delete(file))
-    return Promise.resolve(map)
-  })
-  .debounceTime(100)
-  .map(map => {
-    const str = Array.from(map.values()).map(item => item.content).join(',\n')
-    return `var Layout = {${str}};`
-  })
-
-/**
- * markdown documents
- */
-const documents$ = rxWatchGlob({
-    globs: config.documents,
-    throttleTime: 10
-  })
-  .switchMap(({ change, map }) => {
-    const { type, file, files, content } = change
-
-    // add/change
-    if (type !== 'unlink') {
-      console.log(`[File ${type}]: ${file}`)
-      const metadata = getMetadata(file, content)
-      return fromPromise(md2vue(metadata))
-        .map(component => assign(metadata, { component }))
-        .do(_ => map.set(file, { metadata }))
-        .map(_ => map)
-    }
-
-    // unlink 
-    file && map.delete(file)
-    files && files.forEach(file => map.delete(file))
-    return Promise.resolve(map)
-  })
-  .debounceTime(100)
-
-const metadata$ = documents$
-  .map(map => [...map.values()].map(o => o.metadata))
-  .do(arr => {
-    const index = arr.findIndex(item => item.fullPath === '/')
-    if (index > -1) {
-      arr.unshift(arr.splice(index, 1)[0])
-    }
-  })
-
-const routers$ = metadata$
-  .map(arr => arr.map(
-      ({ component, layout, fullPath }) => `{
+    return map
+  }, null)
+  .switchMap(map => Promise.all(
+      Array.from(map.keys())
+        .map(file => map.get(file))
+        .map(({ code$, metadata }) => {
+          return code$.then((code) => {
+            metadata.component = code
+            return metadata
+          })
+        })
+    )
+  )
+  .map(metadatas => {
+    const urls = metadatas.map(i => i.fullPath)
+    const routers = metadatas.map(({ component, layout, fullPath }) => `{
         path: "${fullPath}",
         component: (${component}),
         meta: { layout: "${layout}" }
-      }`
-    )
-    .concat('{ path: "*", redirect: "/" }')
-  )
-
-const urls$ = metadata$.map(arr => arr.map(i => i.fullPath))
-
-// ==========================================================
-/**
- * we'll ignore `unlink/unlinkDir` events
- * simply focus on `change/add/addDir`
- */
-staticfiles$
-  .filter(e => /add|change/.test(e.event))
-  .flatMap(({ fullname, event }) => {
-    const rel = relative(staticSrcDirectory, fullname)
-    const dest = resolve(staticDestination, rel)
-    const ret = { fullname, dest }
-
-    if (event === 'addDir') {
-      return fromPromise(
-        fs.ensureDir(dest).then(_ => ret)
-      )
-    } else {
-      return Promise.resolve(ret)
-    }
-  })
-  .subscribe(({ fullname, dest }) => {
-    // copy file/dir on `change/add` event
-    fs.copySync(fullname, dest)
+      }`)
+      .concat('{ path: "*", redirect: "/" }')
+    return { routers, urls }
   })
 
-const styleHash$ = styleBundle$
-  .switchMap(code => {
-    const hash = revHash(code)
-    return fs.writeFile(`${staticDestination}/style.${hash}.css`, code)
-      .then(_ => hash)
-  })
+combineLatest([
+  configuration$,
+  vendorHash$,
+  pluginBundle$,
+  layoutBundle$,
+  documents$
+])
+  .catch(e => logger.error(e))
+  .subscribe(([
+    { routerMode, port, staticOutput },
+    vendorHash,
+    plugins,
+    layouts,
+    { routers, urls, codes }
+  ]) => {
+    const { ssr, browser } = bundlePages({
+      mode: routerMode,
+      routers,
+      code: [plugins, layouts]
+    })
 
-const scripts$ = Observable
-  .combineLatest(
-    layoutBundle$,
-    pluginBundle$,
-    routers$
-  )
-  .map(([layouts, plugins, routers]) => bundlePages({
-    mode: config.routerMode,
-    routers,
-    code: [plugins, layouts]
-  }))
-
-const appHash$ = scripts$
-  .do(({ ssr }) => {
     vm.runInNewContext(ssr, sandBox)
-  })
-  .flatMap(({ browser, ssr }) => 
-  {
-    const hash = revHash(browser)
-    return fs.writeFile(`${staticDestination}/app.${hash}.js`, browser)
-      .then(_ => hash)
-  })
 
-const main$ = styleHash$
-  .combineLatest(appHash$)
-  .map(([style, app]) => ({ style, app, vendor: vendorHash }))
+    const appHash = revHash(browser)
+    ensureFileSync(`${staticOutput}/app.${appHash}.js`)
+    writeFileSync(`${staticOutput}/app.${appHash}.js`, browser)
 
-main$.take(1)
-  .subscribe((hash) => {
-    console.log('start server.....')
-    startServer({
+    const hash = {
+      app: appHash,
+      vendor: vendorHash
+    }
+
+    devServer.reset({
       hash,
-      port: config.port,
-      staticDir: staticDestination,
+      port,
+      staticDir: staticOutput,
       ssrConfig: sandBox.module.exports
     })
   })

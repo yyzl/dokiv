@@ -28,16 +28,16 @@ function createApp (ref) {
     routes: routes,
     scrollBehavior: function () { return ({ x: 0, y: 0 }); }
   };
-  
+
   if (url) {
     data.url = url;
   }
 
   Object.keys(layouts).forEach(function (key) {
-    Vue.component(("layout-" + key), layouts[key]);
+    layouts && Vue.component(("layout-" + key), layouts[key]);
   });
 
-  plugins.forEach(function (plugin) { return Vue.use(plugin); });
+  plugins.forEach(function (plugin) { return plugin && plugin.install && Vue.use(plugin); });
 
   var router = new VueRouter(routerConfig);
   var app = new Vue({
@@ -51,7 +51,7 @@ function createApp (ref) {
   router.onReady(function () {
     app.$mount('#app');
   });
-  
+
   return { app: app, router: router }
 }
 

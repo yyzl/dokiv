@@ -1,9 +1,8 @@
-const { resolve, extname, basename } = require('path')
-
+const { extname, basename } = require('path')
 const rollup = require('rollup')
-const chokidar = require('chokidar')
-const { Observable } = require('rxjs')
-const { writeFile } = require('fs-extra')
+const { readFile } = require('fs-extra')
+const LRU = require("lru-cache")
+const revHash = require('rev-hash')
 
 const vue = require('rollup-plugin-vue')
 const json = require('rollup-plugin-json')
@@ -13,6 +12,7 @@ const commonjs = require('rollup-plugin-commonjs')
 const nodeResolve = require('rollup-plugin-node-resolve')
 
 const pascalCase = require('./util/pascalCase')
+const lruCache = new LRU()
 
 const plugins = [
   vue(),
@@ -24,32 +24,40 @@ const plugins = [
   }),
   commonjs(),
   replace({
-    'process.env.NODE_ENV': JSON.stringify('production')
+    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV)
   }),
   json(),
   buble()
 ]
 
-module.exports = async function compilePlugin (file) {
-  const name = pascalCase(basename(file, extname(file)))
+module.exports = function compilePlugin (file) {
+  return readFile(file).then(content => {
+    const hash = revHash(content)
+    const cache = lruCache.get(hash)
 
-  const inputOptions = {
-    input: file,
-    plugins: plugins
-  }
+    if (cache) {
+      return cache
+    }
 
-  const outputOptions = {
-    name,
-    format: 'iife',
-    sourcemap: false,
-    strict: true
-  }
+    const name = pascalCase(basename(file, extname(file)))
+    const inputOptions = {
+      input: file,
+      plugins: plugins
+    }
+    const outputOptions = {
+      name,
+      format: 'iife',
+      sourcemap: false,
+      strict: true
+    }
 
-  const bundle = await rollup.rollup(inputOptions)
-  const { code } = await bundle.generate(outputOptions)
-
-  return {
-    name,
-    code: code
-  }
+    return rollup
+      .rollup(inputOptions)
+      .then(bundle => bundle.generate(outputOptions))
+      .then(({ code }) => {
+        const ret = { name, code }
+        lruCache.set(hash, ret)
+        return ret
+      })
+  })
 }

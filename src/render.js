@@ -32,10 +32,10 @@ export default function createApp ({
   }
 
   Object.keys(layouts).forEach(key => {
-    Vue.component(`layout-${key}`, layouts[key])
+    layouts && Vue.component(`layout-${key}`, layouts[key])
   })
 
-  plugins.forEach(plugin => Vue.use(plugin))
+  plugins.forEach(plugin => plugin && plugin.install && Vue.use(plugin))
 
   const router = new VueRouter(routerConfig)
   const app = new Vue({

@@ -1,5 +1,3 @@
-const { minify } = require('uglify-js')
-
 /**
  * generate bundle of pages
  */
@@ -23,7 +21,7 @@ module.exports = function ({
     plugins: Plugins
   }`
 
-  const browser = `
+  const client = `
     ;(function (){
     ${code.join(';')}
     ${routersCode}
@@ -37,8 +35,11 @@ module.exports = function ({
     module.exports = ${appConfig};
   `
 
+  const isProd = process.env.DOC_ENV === 'production'
+  const browser = isProd ? require('uglify-js').minify(client).code : client
+
   return {
-    ssr: ssr,
-    browser: process.env.isProd ? minify(browser).code : browser
+    ssr,
+    browser
   }
 }
