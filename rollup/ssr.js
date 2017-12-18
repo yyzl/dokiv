@@ -15,6 +15,11 @@ import commonjs from 'rollup-plugin-commonjs'
 import nodeResolve from 'rollup-plugin-node-resolve'
 
 /**
+ * replace loader
+ */
+import replace from 'rollup-plugin-replace'
+
+/**
  * json loader
  */
 import json from 'rollup-plugin-json'
@@ -43,6 +48,9 @@ const ssr = {
   plugins: [
     alias({
       'vue': resolve('node_modules/vue/dist/vue.esm.js')
+    }),
+    replace({
+      'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV)
     }),
     nodeResolve({
       jsnext: true,

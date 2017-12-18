@@ -5,12 +5,12 @@ const {
 
 const {
   existsSync,
-  createFile,
   readFile,
   writeFile,
   writeFileSync,
   emptyDir,
   ensureDir,
+  ensureFile,
   ensureFileSync,
   copy
 } = require('fs-extra')
@@ -139,10 +139,13 @@ const vendorHash$ = configuration$
 const styleHash$ = configuration$
   .switchMap(({ postcss, npmPrefix, staticOutput }) => {
     const option = Object.assign({}, postcss, { npmPrefix })
+    // TODO: hot reload
     return postCSS(option)
       .map(css => ({ css, hash: revHash(css) }))
       .flatMap(({ css, hash }) => {
-        return writeFile(`${staticOutput}/style.${hash}.css`, css)
+        const file = `${staticOutput}/style.${hash}.css`
+        return ensureFile(file)
+          .then(() => writeFile(file, css))
           .then(() => hash)
       })
   })
@@ -175,6 +178,7 @@ const pluginBundle$ = configuration$
     )
   )
   .map(data => {
+    // TODO: split into modules
     let code = data.map(({ code }) => code).join('\n')
     code += `\nvar Plugins = [`
     code += data.map(({ name }) => `typeof ${name} !== 'undefined' && ${name}`).join(',\n')
@@ -208,6 +212,7 @@ const layoutBundle$ = configuration$
         .map(file => map.get(file))
     )
   )
+  // TODO: split into modules
   .map(data => `var Layout = {${data.join(',\n')}};`)
 
 const documents$ = configuration$
@@ -246,6 +251,7 @@ const documents$ = configuration$
         })
     )
   )
+  // TODO: split into modules
   .map(metadatas => {
     const paths = metadatas.map(i => i.fullPath)
     const routers = metadatas.map(({ component, layout, fullPath }) => `{
@@ -312,7 +318,7 @@ combineLatest([
       const url = `http://127.0.0.1:${serverPort}${path}`
       promises[i] = request(url)
         .then(
-          resp => createFile(dest)
+          resp => ensureFile(dest)
             .then(() => writeFile(dest, resp))
         )
     }

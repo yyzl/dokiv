@@ -5,7 +5,7 @@
   "main": "src/index.js",
   "scripts": {
     "bin": "rollup -c rollup/bin.js",
-    "ssr": "rollup -c rollup/ssr.js",
+    "ssr": "cross-env NODE_ENV=production rollup -c rollup/ssr.js",
     "client:dev": "cross-env NODE_ENV=development rollup -c rollup/client.js",
     "client:prod": "cross-env NODE_ENV=production rollup -c rollup/client.js",
     "build": "rimraf dist/ && run-s ssr client:dev client:prod bin"
