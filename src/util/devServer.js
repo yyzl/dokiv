@@ -8,7 +8,7 @@ const renderer = serverRenderer
 
 module.exports = {
   started: false,
-  reset ({
+  config ({
     hash,
     port,
     staticDir,
@@ -24,6 +24,7 @@ module.exports = {
       this.serveFavico()
       this.serveStatic()
       this.serveOthers()
+      this.started = true
     }
 
     if (!this.port) {
@@ -32,6 +33,8 @@ module.exports = {
       server.listen(port)
       logger.info('Server listening on port: ', port)
     }
+
+    return this
   },
 
   serveStatic () {

@@ -40,18 +40,20 @@ import alias from 'rollup-plugin-alias'
  */
 import uglify from 'rollup-plugin-uglify'
 
-const bundle = {
-  input: './src/render.js',
+const isProd = process.env.NODE_ENV === 'production'
+
+export default {
+  input: 'lib/render.js',
   output: {
     name: 'createApp',
-    file: 'dist/bundle.js',
+    file: `dist/bundle.${process.env.NODE_ENV}.js`,
     format: 'iife',
-    sourcemap: false,
+    sourcemap: !isProd ? 'inline' : false,
     strict: true
   },
   plugins: [
     alias({
-      'vue': resolve('./node_modules/vue/dist/vue.esm.js')
+      'vue': resolve('node_modules/vue/dist/vue.esm.js')
     }),
     nodeResolve({
       jsnext: true,
@@ -61,41 +63,10 @@ const bundle = {
     }),
     commonjs(),
     replace({
-      'process.env.NODE_ENV': JSON.stringify('production')
+      'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV)
     }),
     json(),
     buble(),
-    uglify()
+    isProd && uglify()
   ]
 }
-
-const ssr = {
-  input: './src/render.js',
-  output: {
-    name: 'createApp',
-    file: 'dist/ssr.js',
-    format: 'cjs',
-    sourcemap: false,
-    strict: true
-  },
-  external: Object.keys(require('./package.json').dependencies),
-  plugins: [
-    alias({
-      'vue': resolve('./node_modules/vue/dist/vue.esm.js')
-    }),
-    nodeResolve({
-      jsnext: true,
-      main: true,
-      browser: true,
-      extensions: ['.js', '.json']
-    }),
-    commonjs(),
-    json(),
-    buble()
-  ]
-}
-
-/**
- * Rollup: https://rollupjs.org/
- */
-export default [bundle, ssr]

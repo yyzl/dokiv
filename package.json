@@ -4,7 +4,11 @@
   "description": "A document generator with vue and markdown",
   "main": "src/index.js",
   "scripts": {
-    "build": "rollup -c rollup.config.js"
+    "bin": "rollup -c rollup/bin.js",
+    "ssr": "rollup -c rollup/ssr.js",
+    "client:dev": "cross-env NODE_ENV=development rollup -c rollup/client.js",
+    "client:prod": "cross-env NODE_ENV=production rollup -c rollup/client.js",
+    "build": "rimraf dist/ && run-s ssr client:dev client:prod bin"
   },
   "bin": "./bin/cmd",
   "repository": {
@@ -22,6 +26,7 @@
     "find-npm-prefix": "^1.0.2",
     "fs-extra": "^5.0.0",
     "js-yaml": "^3.10.0",
+    "lodash.debounce": "^4.0.8",
     "lodash.isequal": "^4.5.0",
     "lru-cache": "^4.1.1",
     "md2vue": "^3.0.0-beta",
@@ -56,5 +61,10 @@
     "vueify": "^9.4.1",
     "yaml-front-matter": "^3.4.0"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "builtin-modules": "^2.0.0",
+    "cross-env": "^5.1.1",
+    "npm-run-all": "^4.1.2",
+    "rimraf": "^2.6.2"
+  }
 }

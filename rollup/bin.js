@@ -23,13 +23,15 @@ import json from 'rollup-plugin-json'
  */
 import buble from 'rollup-plugin-buble'
 
-const deps = require('./package.json').dependencies
-const external = Object.keys(deps).concat(['path', 'vm'])
+const deps = require('../package.json').dependencies
+const builtins = require('builtin-modules/builtin-modules.json')
+const external = Object.keys(deps).concat(builtins)
+
 export default {
-  input: './rx/index.js',
+  input: 'src/index.js',
   output: {
-    name: "test",
-    file: 'dist/rx.js',
+    name: 'test',
+    file: 'dist/bin.js',
     format: 'cjs',
     sourcemap: false,
     strict: true
@@ -39,6 +41,7 @@ export default {
     nodeResolve({
       jsnext: true,
       main: true,
+      extensions: [ '.js', '.json' ],
       preferBuiltins: true
     }),
     commonjs(),

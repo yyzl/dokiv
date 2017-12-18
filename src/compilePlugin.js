@@ -1,7 +1,7 @@
 const { extname, basename } = require('path')
 const rollup = require('rollup')
 const { readFile } = require('fs-extra')
-const LRU = require("lru-cache")
+const LRU = require('lru-cache')
 const revHash = require('rev-hash')
 
 const vue = require('rollup-plugin-vue')

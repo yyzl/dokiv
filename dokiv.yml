@@ -9,11 +9,9 @@ documents: ./example/content/**/*.md
 
 # styles
 postcss:
-  # entry: ./example/assets/css/main.css
+  entry: ./example/assets/css/main.css
   minify: true
   sourcemap: true
   plugins:
     - postcss-import
     - postcss-cssnext
-
-    
