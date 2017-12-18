@@ -2,19 +2,23 @@ const express = require('express')
 const serverRenderer = require('vue-server-renderer')
 const createApp = require('../../dist/ssr')
 const logger = require('./logger')
+
 const server = express()
 const renderer = serverRenderer
   .createRenderer({ template: '<!--vue-ssr-outlet-->' })
 
 module.exports = {
   started: false,
+  see: null,
   config ({
+    sse,
     hash,
     port,
     staticDir,
     ssrConfig
   }) {
     const { app, router } = createApp(ssrConfig)
+    this.sse = sse
     this.app = app
     this.router = router
     this.hash = hash
@@ -23,6 +27,7 @@ module.exports = {
     if (this.started === false) {
       this.serveFavico()
       this.serveStatic()
+      this.serveSse()
       this.serveOthers()
       this.started = true
     }
@@ -45,6 +50,10 @@ module.exports = {
 
   serveFavico () {
     server.use('/favicon.ico', (_, res) => res.end(''))
+  },
+
+  serveSse () {
+    server.use('/__sse__', this.sse.init)
   },
 
   serveOthers () {

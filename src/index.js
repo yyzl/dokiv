@@ -23,6 +23,8 @@ const request = require('request-promise')
 
 const isEqual = require('lodash.isequal')
 const getNpmPrefix = require('find-npm-prefix')
+const SSE = require('express-sse')
+const expressSse = new SSE([{ type: 'init' }])
 
 const { Observable } = require('rxjs')
 const { fromPromise, combineLatest } = Observable
@@ -303,6 +305,7 @@ combineLatest([
     .config({
       hash,
       port,
+      sse: expressSse,
       staticDir: staticOutput,
       ssrConfig: sandBox.module.exports
     })
@@ -327,5 +330,9 @@ combineLatest([
       logger.info('SSR done.')
       process.exit()
     })
+  } else {
+    // reload
+    // TODO: style bundle hot reload
+    expressSse.send({ type: 'reload' })
   }
 })
