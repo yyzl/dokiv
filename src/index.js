@@ -142,7 +142,8 @@ const styleHash$ = configuration$.switchMap(
     return postCSS(option)
       .map(css => ({ css, hash: revHash(css) }))
       .switchMap(({ css, hash }) => {
-        const file = `${staticOutput}/style.${hash}.css`
+        const file = resolve(`${staticOutput}/style.${hash}.css`)
+        logger.info(`Style changed: ${file.replace(/\\/g, '/')}`)
         return ensureFile(file)
           .then(() => writeFile(file, css))
           .then(() => hash)

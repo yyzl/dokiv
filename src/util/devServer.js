@@ -79,7 +79,7 @@ module.exports = {
           if (err) {
             console.log(err)
             return res.status(500)
-              .end(`<pre>${error.stack}</pre>`)
+              .end(`<pre>${err.stack}</pre>`)
           }
 
           const $meta = app.$meta().inject()
