@@ -2,6 +2,8 @@ const buble = require('buble')
 const { compiler } = require('vueify')
 const { parseComponent } = require('vue-template-compiler')
 
+const prodEnv = require('./prodEnv')
+
 compiler.applyConfig({
   extractCSS: true,
   customCompilers: {
@@ -25,8 +27,11 @@ module.exports = (content = '', filePath = '') => {
 
   const sfc = `<template lang="${isPug ? 'pug' : 'html'}">${template.content}</template>
 <script lang="buble">${script}</script>`
+
   return new Promise((resolve, reject) => {
+    prodEnv.set()
     compiler.compile(sfc, filePath, (err, result) => {
+      prodEnv.restore()
       if (err) {
         reject(err)
       } else {

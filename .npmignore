@@ -1,6 +1,9 @@
 example/
 site/
 src/
+rollup/
 *.sublime-project
 *.sublime-workspace
 dokiv.yml
+.vscode/
+lib/

@@ -1,7 +1,6 @@
 ---
 title: 自定义样式
 layout: component
-scrollTop: true
 route: component/theme
 ---
 

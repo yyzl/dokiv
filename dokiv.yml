@@ -1,18 +1,22 @@
-# dest directory
-output: ./site
-
-# layouts 文件目录
-layout: ./example/layouts/*.vue
-
-# layouts 文件目录
-plugins: ./example/plugins/*.js
-
-# 静态文件如图片等
-static: ./example/static
-
-# markdown 文件
-docs:
-  - ./example/**/*.md
-
 # router mode: `hash` or `history`
-mode: 'history'
+routerMode: 'history'
+# root
+rootDir: './example/'
+# dest directory
+output: ./site/
+# markdown files
+documents: 
+  - ./example/content/**/*.md
+
+# styles
+postcss:
+  entry: ./example/assets/css/main.css
+  minify: true
+  sourcemap: true
+  plugins:
+    - postcss-import
+    - postcss-cssnext
+
+externals:
+  - https://lib.baomitu.com/font-awesome/4.7.0/css/font-awesome.min.css
+  - https://lib.baomitu.com/jquery/3.2.1/jquery.min.js

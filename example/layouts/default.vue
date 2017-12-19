@@ -9,3 +9,15 @@
     <c-footer />
   </div>
 </template>
+
+<script>
+export default {
+  metaInfo () {
+    return {
+      meta: [
+        { charset: 'utf-8' }
+      ]
+    }
+  }
+}
+</script>

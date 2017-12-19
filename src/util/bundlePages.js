@@ -1,18 +1,16 @@
-const { minify } = require('uglify-js')
-
 /**
  * generate bundle of pages
  */
 module.exports = function ({
   code = [],
   routers = [],
-  routerMode = 'hash'
+  mode = 'hash'
 }) {
   const routersCode = `var routes = [${routers.join(',\n')}];`
 
   const appConfig = `{
     el: "#app",
-    mode: "${routerMode}",
+    mode: "${mode}",
     routes: routes,
     render: function (h) {
       var layout = this.$route.meta.layout || 'default'
@@ -23,22 +21,25 @@ module.exports = function ({
     plugins: Plugins
   }`
 
-  const clientCode = `
-    (function (){
+  const client = `
+    ;(function (){
     ${code.join(';')}
     ${routersCode}
     createApp(${appConfig});
-    }())
+    }());
   `
 
-  const ssrCode = `
+  const ssr = `
     ${code.join(';')}
     ${routersCode}
     module.exports = ${appConfig};
   `
 
-   return {
-    clientCode: clientCode, //minify(clientCode).code,
-    ssrCode
-   }
+  const isProd = process.env.DOC_ENV === 'production'
+  const browser = isProd ? require('uglify-js').minify(client).code : client
+
+  return {
+    ssr,
+    browser
+  }
 }

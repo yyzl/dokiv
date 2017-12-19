@@ -1,7 +1,6 @@
 ---
 title: 文字
 layout: component
-scrollTop: true
 route: component/typography
 ---
 
