@@ -118,7 +118,9 @@ const productionCounts$ = configuration$
 
 const vendorHash$ = configuration$
   .switchMap(({ output, staticSource, staticOutput }) =>
-    emptyDir(output)
+    // do not do clean work here
+    // emptyDir(output)
+    ensureDir(output)
       .then(() => ensureDir(staticOutput))
       .then(() => copy(staticSource, staticOutput))
       .then(() => {
