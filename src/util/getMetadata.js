@@ -18,9 +18,10 @@ module.exports = (file, markdown) => {
   let {
     route,
     title,
+    highlight,
     body = '# Not Found',
     layout = 'default',
-    meta = {}
+    meta = {},
   } = loadFront(markdown, 'body')
 
   meta.title = meta.title || title
@@ -44,6 +45,7 @@ module.exports = (file, markdown) => {
   return {
     layout,
     fullPath: isMain ? '/' : `/${route}`,
+    highlight,
 
     meta,
     componentName,

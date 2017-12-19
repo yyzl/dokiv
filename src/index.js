@@ -223,7 +223,13 @@ const layoutBundle$ = configuration$
     }
   })
 
+let highlight = 'prism'
 const documents$ = configuration$
+  .do(conf => {
+    // FIXME
+    // effect
+    highlight = conf.highlight || 'highlight.js'
+  })
   .flatMap(conf => {
     const { globs: { documents }, npmPrefix } = conf
     return rxWatch(documents, npmPrefix)
@@ -238,7 +244,9 @@ const documents$ = configuration$
       map.delete(file)
     } else if (event === 'add' || event === 'change') {
       const metadata = getMetadata(file)
-
+      // FIXME
+      console.log(metadata.highlight)
+      metadata.highlight = metadata.highlight || highlight
       if (typeof metadata === 'string') {
         logger.error(metadata + file)
       } else {

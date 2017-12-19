@@ -8,6 +8,10 @@ output: ./site/
 documents: 
   - ./example/content/**/*.md
 
+# highlight
+# `highlight.js` or `prism`
+highlight: 'prism'
+
 # styles
 postcss:
   entry: ./example/assets/css/main.css

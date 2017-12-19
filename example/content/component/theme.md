@@ -2,6 +2,7 @@
 title: 自定义样式
 layout: component
 route: component/theme
+highlight: 'highlight.js'
 ---
 
 # 自定义样式

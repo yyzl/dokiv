@@ -1,8 +1,10 @@
 @import './markdown.css';
 @import './theme.css';
 @import './demo-block.css';
-@import 'highlight.js/styles/github-gist.css';
 @import '../../lib/clair.css';
+
+@import 'highlight.js/styles/github-gist.css';
+@import "prismjs/themes/prism.css";
 
 .fade-enter-active, .fade-leave-active {
   transition: opacity .3s

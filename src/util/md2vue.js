@@ -14,6 +14,7 @@ const lrucCache = new LRU()
 module.exports = function compileVue ({
   meta,
   markdown,
+  highlight,
   componentName
 }) {
   const hash = revHash(markdown)
@@ -42,7 +43,7 @@ module.exports = function compileVue ({
 
   const conf = {
     target: 'js',
-    highlight: 'highlight.js',
+    highlight,
     documentInfo,
     componentName,
     customMarkups

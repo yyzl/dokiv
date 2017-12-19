@@ -33,6 +33,7 @@ A `dokiv.yml` must be found under the root of your project.
 
 You can take a look at [./dokiv.yml](./example/dokiv.yml).
 
+* `highlight`: default code highlight theme, `highlight.js` or `prism` 
 * `routerMode`: vue router mode, either`hash` or `history`
 * `rootDir`: root directory of docs
 * `output`: dest directory
@@ -60,6 +61,8 @@ Suppose your `rootDir` is `docs`, following subdirs are required.
 layout: default
 route: /post/2017/12/record
 title: 'A record for Nov 12 2017'
+# specify highlight theme for this file
+highlight: 'prism'
 meta:
   title: 'A record for Nov 12 2017'
   titleTemplate: '%s - Yay!'
@@ -77,6 +80,8 @@ Note:
 * more info about `meta`, click [here](https://github.com/declandewet/vue-meta).
 
 Here is the markdown [demo](./example/content/index.md).
+
+Click [here](https://github.com/AngusFu/dokiv-example) to get an example. 
 
 ## Reference
 
