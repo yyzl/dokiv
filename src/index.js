@@ -116,6 +116,12 @@ const productionCounts$ = configuration$
     documents: globby.sync(documents).length
   }))
 
+const cleanTask$ =  configuration$
+  .switchMap(({ output, staticSource, staticOutput }) =>
+    emptyDir(output)
+      .then(() => ensureDir(staticOutput))
+  )
+
 const vendorHash$ = configuration$
   .switchMap(({ output, staticSource, staticOutput }) =>
     // do not do clean work here
@@ -305,8 +311,8 @@ const production$ = combineLatest([
   .catch(e => logger.error(e))
 
 if (process.env.DOCKIV_ENV === 'production') {
-  production$
-    .subscribe(main)
+  // cleanTask$.take(1)
+  production$.subscribe(main)
 } else {
   let serverLaunched = false
 
