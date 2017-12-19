@@ -1,7 +1,6 @@
 ---
 title: 安装和使用
 layout: component
-scrollTop: true
 route: component/install
 ---
 

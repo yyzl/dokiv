@@ -1,7 +1,6 @@
 ---
 title: 颜色
 layout: component
-scrollTop: true
 route: component/color
 ---
 

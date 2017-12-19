@@ -22,6 +22,10 @@ class GlobResultFile {
     }
   }
 
+  get file () {
+    return this.fullname
+  }
+
   get basename () {
     if (this.hasName) {
       return path.basename(this.name)
@@ -46,7 +50,8 @@ class GlobResultFile {
 }
 
 const watcherCache = new Map()
-module.exports = function watchRx (pattern, { basedir }) {
+
+module.exports = function watchRx (pattern, basedir) {
   return Observable
     .create((observer) => {
       let isFinished = false

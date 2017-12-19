@@ -5,7 +5,8 @@ rootDir: './example/'
 # dest directory
 output: ./site/
 # markdown files
-documents: ./example/content/**/*.md
+documents: 
+  - ./example/content/**/*.md
 
 # styles
 postcss:
@@ -15,3 +16,7 @@ postcss:
   plugins:
     - postcss-import
     - postcss-cssnext
+
+externals:
+  - https://lib.baomitu.com/font-awesome/4.7.0/css/font-awesome.min.css
+  - https://lib.baomitu.com/jquery/3.2.1/jquery.min.js

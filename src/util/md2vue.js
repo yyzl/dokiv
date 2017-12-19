@@ -2,6 +2,7 @@ const md2vue = require('md2vue')
 const Prepack = require('prepack')
 const revHash = require('rev-hash')
 const LRU = require('lru-cache')
+const isEqual = require('lodash.isequal')
 
 const prodEnv = require('./prodEnv')
 
@@ -11,15 +12,17 @@ const lrucCache = new LRU()
  * compile markdown to precompiled vue component
  */
 module.exports = function compileVue ({
-  title,
+  meta,
   markdown,
   componentName
 }) {
   const hash = revHash(markdown)
   const cache = lrucCache.get(hash) || {}
   const hit = cache.code &&
-    (cache.title === title &&
-      cache.name === componentName)
+    // meta 不变
+    isEqual(cache.meta, meta) &&
+    // route & layout 不变
+    cache.name === componentName
 
   if (hit) {
     return Promise.resolve(cache.code)
@@ -32,9 +35,12 @@ module.exports = function compileVue ({
     return `<vue-demo-tools page="${componentName}" :index="${id++}"/>`
   }
 
+  const metaInfo = {
+    metaInfo
+  }
   const documentInfo = {
     // eslint-disable-next-line
-    metaInfo: new Function(`return { title: "${title}" }`)
+    metaInfo: new Function(`return ${JSON.stringify(meta)}`)
   }
 
   const conf = {
@@ -54,7 +60,7 @@ module.exports = function compileVue ({
   ${Prepack.prepack(raw).code};
   return ${componentName};
 })()`
-      lrucCache.set(hash, { title, code, name: componentName })
+      lrucCache.set(hash, { meta, code, name: componentName })
       return code
     })
 }

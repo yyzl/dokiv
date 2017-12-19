@@ -11,18 +11,33 @@ module.exports = (file, markdown) => {
     markdown = readFileSync(file, 'utf-8')
   }
 
+  if (markdown.trim() === '') {
+    return 'Empty markdown: '
+  }
+
   let {
-    body,
     route,
+    title,
+    body = '# Not Found',
     layout = 'default',
-    title
+    meta = {}
   } = loadFront(markdown, 'body')
+
+  meta.title = meta.title || title
+
+  if (!meta.title) {
+    return 'Field `title` or `meta.title` is not defined: '
+  }
+
+  if (!route) {
+    return 'Field `route` is not defined: '
+  }
 
   route = route.replace(/^\//, '')
 
   const [group, name] = route.split('/')
   const pageName = name || basename(file, extname(file))
-  const componentName = pascalCase(`${group}-${pageName}`)
+  const componentName = pascalCase(`doc-${layout}-${group}-${pageName}`)
 
   const isMain = group === 'index' && !name
 
@@ -30,7 +45,7 @@ module.exports = (file, markdown) => {
     layout,
     fullPath: isMain ? '/' : `/${route}`,
 
-    title,
+    meta,
     componentName,
     markdown: body
   }

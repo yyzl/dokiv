@@ -1,7 +1,6 @@
 ---
 title: 组件设计规范
 layout: principle
-scrollTop: true
 route: principle/guides
 ---
 

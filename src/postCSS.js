@@ -9,14 +9,12 @@ const {
   ensureFile
 } = require('fs-extra')
 
-const LRU = require('lru-cache')
 const { exec } = require('shelljs')
 const revHash = require('rev-hash')
 const chokidar = require('chokidar')
 const { Observable } = require('rxjs')
 const debounce = require('lodash.debounce')
 
-const logger = require('./util/logger')
 const tempdir = join(os.tmpdir(), 'dokiv-css-temp')
 
 module.exports = function ({

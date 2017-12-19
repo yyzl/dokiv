@@ -1,6 +1,6 @@
 const { basename } = require('path')
 const { readFile } = require('fs-extra')
-const LRU = require("lru-cache")
+const LRU = require('lru-cache')
 const revHash = require('rev-hash')
 const pascalCase = require('./util/pascalCase')
 const compileVueWithoutStyle = require('./util/compileVueWithoutStyle')
