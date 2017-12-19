@@ -176,7 +176,7 @@ route: component/icon
 </style>
 
 <template demo-only>
-  <c-box gap="5%" class="is-text-center" v-effect>
+  <c-box gap="5%" class="is-text-center">
     <c-box-item v-if="icons.length === 0" xs="12">
       数据加载中....
     </c-box-item>

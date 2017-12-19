@@ -67,13 +67,6 @@ var throttle = function(fn, delay, immediate, debounce) {
 }
 
 export default {
-  metaInfo () {
-    return {
-      meta: [
-        { charset: 'utf-8' }
-      ]
-    }
-  },
   data () {
     return {
       showToTop: false,
