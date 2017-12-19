@@ -51,6 +51,8 @@ module.exports = function compilePlugin (file) {
       strict: true
     }
 
+    // TODO
+    // watch deps
     return rollup
       .rollup(inputOptions)
       .then(bundle => bundle.generate(outputOptions))
