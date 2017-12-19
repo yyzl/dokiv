@@ -1,6 +1,6 @@
 {
   "name": "dokiv",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "A document generator with vue and markdown",
   "main": "src/index.js",
   "scripts": {

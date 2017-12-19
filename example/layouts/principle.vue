@@ -21,13 +21,6 @@
 
 <script>
 export default {
-  metaInfo () {
-    return {
-      meta: [
-        { charset: 'utf-8' }
-      ]
-    }
-  },
   data () {
     return {
       menu: [

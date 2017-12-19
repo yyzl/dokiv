@@ -35,9 +35,6 @@ module.exports = function compileVue ({
     return `<vue-demo-tools page="${componentName}" :index="${id++}"/>`
   }
 
-  const metaInfo = {
-    metaInfo
-  }
   const documentInfo = {
     // eslint-disable-next-line
     metaInfo: new Function(`return ${JSON.stringify(meta)}`)

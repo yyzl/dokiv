@@ -45,7 +45,8 @@ module.exports = function ({
   const hashName = revHash(entry)
   const tempfile = join(tempdir, hashName)
   const command = `${compile} -o ${tempfile}`
-  const option = { silent: true, async: true }
+  // we need error messages
+  const option = { silent: false, async: true }
 
   return Observable
     .fromPromise(
