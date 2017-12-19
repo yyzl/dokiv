@@ -3,12 +3,12 @@ const reTime = /\d{2}:\d{2}:\d{2}/
 const time = () => new Date().toString().match(reTime)[0]
 
 module.exports = {
-  info (msg) {
+  info (...msg) {
     console.log(
       `[%s] [%s] %s`,
       chalk.yellow(time()),
       chalk.green('info'),
-      msg
+      ...msg
     )
   },
   error (msg) {
