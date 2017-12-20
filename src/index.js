@@ -327,7 +327,7 @@ getPort({ port: 3000 }).then(port => {
         main.apply(null, args)
       })
   }
-    // .combineLatest(cleanTask$)
+
   configuration$
     .subscribe(() =>
       logger.info('yaml configuration updated!')
