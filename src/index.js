@@ -125,6 +125,7 @@ const cleanTask$ = configuration$
 
 const vendorHash$ = configuration$
   .switchMap(({ output, staticSource, staticOutput }) =>
+    // FIXME
     // do not do clean work here
     // emptyDir(output)
     ensureDir(output)

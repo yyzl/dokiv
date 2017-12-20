@@ -46,7 +46,7 @@ You can take a look at [./dokiv.yml](./example/dokiv.yml).
 * `externals`: additional css/javascript urls
 
 
-## Directory Structor
+## Directory Structure
 
 Suppose your `rootDir` is `docs`, following subdirs are required.
 
