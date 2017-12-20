@@ -6,6 +6,7 @@ const {
   writeFileSync,
   ensureFileSync
 } = require('fs-extra')
+
 const SSE = require('express-sse')
 const revHash = require('rev-hash')
 const request = require('request-promise')
@@ -27,7 +28,7 @@ const sandBox = {
   module: {}
 }
 
-module.exports = function (args) {
+module.exports = function (...args) {
   const [
     documents,
     pluginBundle,

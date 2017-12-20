@@ -1,5 +1,5 @@
 // TODO
-module.exports = {
+export default {
   install (Vue) {
     Vue.component('vue-demo-tools', {
       template: `

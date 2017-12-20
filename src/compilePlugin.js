@@ -42,7 +42,8 @@ module.exports = function compilePlugin (file) {
     const name = pascalCase(basename(file, extname(file)))
     const inputOptions = {
       input: file,
-      plugins: plugins
+      plugins: plugins,
+      exports: 'named'
     }
     const outputOptions = {
       name,

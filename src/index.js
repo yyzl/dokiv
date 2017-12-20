@@ -1,4 +1,6 @@
-const { join, resolve } = require('path')
+global.Promise = require('bluebird')
+
+const { resolve } = require('path')
 
 const {
   existsSync,
@@ -14,24 +16,27 @@ const opn = require('opn')
 const yaml = require('js-yaml')
 const LRU = require('lru-cache')
 const globby = require('globby')
+const getPort = require('get-port')
 const revHash = require('rev-hash')
+const { exec } = require('shelljs')
 const isEqual = require('lodash.isequal')
-const getNpmPrefix = require('find-npm-prefix')
+const exitHook = require('async-exit-hook')
 
 const { Observable } = require('rxjs')
-const { fromPromise, combineLatest } = Observable
+const { combineLatest } = Observable
 
 const logger = require('./util/logger')
 const md2vue = require('./util/md2vue')
 const rxWatch = require('./util/rxWatch')
 const getMetadata = require('./util/getMetadata')
 
+const main = require('./main')
 const postCSS = require('./postCSS')
 const compileLayout = require('./compileLayout')
 const compilePlugin = require('./compilePlugin')
 
-const main = require('./main')
 const lruCache = new LRU()
+const prettyPath = p => `${p}`.trim().replace(/\\/g, '/')
 
 const arg = process.argv.slice(2)[0]
 if (['-w', '--watch'].indexOf(arg) === -1) {
@@ -40,22 +45,21 @@ if (['-w', '--watch'].indexOf(arg) === -1) {
   process.env.DOCKIV_ENV = 'development'
 }
 
-const npmPrefix$ = fromPromise(
-  getNpmPrefix(process.cwd())
-)
+let npmPrefix = null
+logger.info('Run `npm prefix`...')
+npmPrefix = prettyPath(exec('npm prefix', { silent: true }))
+logger.info('npm prefix is', npmPrefix)
 
-const configuration$ = npmPrefix$
-  .switchMap(prefix => {
-    const file = join(prefix, 'dokiv.yml')
+const ymlfile = resolve(npmPrefix, 'dokiv.yml')
 
-    if (existsSync(file) === false) {
-      return Observable.throw(
-        `dokiv.yml ` + `not found under current working directory!`
-      )
-    }
+if (existsSync(ymlfile) === false) {
+  logger.error(`dokiv.yml not found under ` +
+    `current working directory!`
+  )
+  process.exit()
+}
 
-    return rxWatch(file, { basedir: prefix })
-  })
+const configuration$ = rxWatch(ymlfile, { basedir: npmPrefix })
   .switchMap(({ event, file }) => {
     if (event === 'unlink') {
       return Observable.throw('dokiv.yaml was removed!')
@@ -75,8 +79,7 @@ const configuration$ = npmPrefix$
     return cache
   })
   .distinctUntilChanged(isEqual)
-  .combineLatest(npmPrefix$)
-  .map(([configuration, prefix]) => {
+  .map((configuration) => {
     const {
       postcss,
       rootDir,
@@ -84,22 +87,20 @@ const configuration$ = npmPrefix$
       documents
     } = configuration
 
-    configuration.npmPrefix = prefix
-
     configuration.globs = {
-      layouts: resolve(prefix, rootDir, 'layouts/*.vue'),
-      plugins: resolve(prefix, rootDir, 'plugins/*.js'),
-      documents: [].concat(documents).map(f => resolve(prefix, f))
+      layouts: resolve(npmPrefix, rootDir, 'layouts/*.vue'),
+      plugins: resolve(npmPrefix, rootDir, 'plugins/*.js'),
+      documents: [].concat(documents).map(f => resolve(npmPrefix, f))
     }
 
     // postcss
     const { entry } = postcss
-    postcss.entry = resolve(prefix, entry)
+    postcss.entry = resolve(npmPrefix, entry)
     postcss.watch = process.env.DOCKIV_ENV !== 'production'
 
-    configuration.output = resolve(prefix, output)
-    configuration.staticSource = resolve(prefix, rootDir, 'static')
-    configuration.staticOutput = resolve(prefix, output, 'static')
+    configuration.output = resolve(npmPrefix, output)
+    configuration.staticSource = resolve(npmPrefix, rootDir, 'static')
+    configuration.staticOutput = resolve(npmPrefix, output, 'static')
 
     return configuration
   })
@@ -116,7 +117,7 @@ const productionCounts$ = configuration$
     documents: globby.sync(documents).length
   }))
 
-const cleanTask$ =  configuration$
+const cleanTask$ = configuration$
   .switchMap(({ output, staticSource, staticOutput }) =>
     emptyDir(output)
       .then(() => ensureDir(staticOutput))
@@ -144,14 +145,14 @@ const vendorHash$ = configuration$
   )
 
 const styleHash$ = configuration$.switchMap(
-  ({ postcss, npmPrefix, staticOutput }) => {
+  ({ postcss, staticOutput }) => {
     const option = Object.assign({}, postcss, { npmPrefix })
 
     return postCSS(option)
       .map(css => ({ css, hash: revHash(css) }))
       .switchMap(({ css, hash }) => {
         const file = resolve(`${staticOutput}/style.${hash}.css`)
-        logger.info(`Style changed: ${file.replace(/\\/g, '/')}`)
+        logger.info(`Style changed: ${prettyPath(file)}`)
         return ensureFile(file)
           .then(() => writeFile(file, css))
           .then(() => hash)
@@ -161,7 +162,7 @@ const styleHash$ = configuration$.switchMap(
 
 const pluginBundle$ = configuration$
   .flatMap(conf => {
-    const { globs: { plugins }, npmPrefix } = conf
+    const { globs: { plugins } } = conf
     return rxWatch(plugins, npmPrefix)
   })
   .do(({ event, file }) =>
@@ -195,7 +196,7 @@ const pluginBundle$ = configuration$
 
 const layoutBundle$ = configuration$
   .flatMap(conf => {
-    const { globs: { layouts }, npmPrefix } = conf
+    const { globs: { layouts } } = conf
     return rxWatch(layouts, npmPrefix)
   })
   .do(({ event, file }) =>
@@ -231,7 +232,7 @@ const documents$ = configuration$
     highlight = conf.highlight || 'highlight.js'
   })
   .flatMap(conf => {
-    const { globs: { documents }, npmPrefix } = conf
+    const { globs: { documents } } = conf
     return rxWatch(documents, npmPrefix)
   })
   .do(({ event, file }) =>
@@ -244,12 +245,11 @@ const documents$ = configuration$
       map.delete(file)
     } else if (event === 'add' || event === 'change') {
       const metadata = getMetadata(file)
-      // FIXME
-      console.log(metadata.highlight)
-      metadata.highlight = metadata.highlight || highlight
+
       if (typeof metadata === 'string') {
         logger.error(metadata + file)
       } else {
+        metadata.highlight = metadata.highlight || highlight
         map.set(file, {
           metadata,
           code$: md2vue(metadata)
@@ -299,7 +299,6 @@ const streams = [
 ]
 
 const development$ = combineLatest(streams)
-  .catch(e => logger.error(e))
 
 const production$ = combineLatest([
   productionCounts$,
@@ -316,26 +315,55 @@ const production$ = combineLatest([
       counts.layouts > layoutBundle.count
   })
   .map(([_, ...rest]) => rest)
-  .catch(e => logger.error(e))
 
-if (process.env.DOCKIV_ENV === 'production') {
-  // cleanTask$.take(1)
-  production$.subscribe(main)
-} else {
-  let serverLaunched = false
+// RUN
+let browserLaunched = false
+getPort({ port: 3000 }).then(port => {
+  if (process.env.DOCKIV_ENV === 'production') {
+    return production$
+      .subscribe(args => {
+        const config = args[args.length - 1]
+        config.port = port
+        main.apply(null, args)
+      })
+  }
+    // .combineLatest(cleanTask$)
+  configuration$
+    .subscribe(() =>
+      logger.info('yaml configuration updated!')
+    )
 
   development$
-    .subscribe((...args) => {
-      const port = main.apply(null, args)
+    .subscribe(args => {
+      const config = args[args.length - 1]
+      config.port = port
+      main.apply(null, args)
 
-      if (serverLaunched === false) {
+      if (browserLaunched === false) {
         logger.info('Launching browser...')
         opn(`http://localhost:${port}`)
-        serverLaunched = true
+        browserLaunched = true
       }
     })
+})
 
-  configuration$.subscribe(() => {
-    logger.info('yaml configuration updated!')
-  })
-}
+// Error handling
+process.on('unhandledRejection', (reason, p) => {
+  logger.error(`${reason}`)
+  console.log(p)
+  process.exit()
+})
+
+process.on('uncaughtException', (err) => {
+  logger.error(err)
+  console.log(err)
+  process.exit()
+})
+
+exitHook.uncaughtExceptionHandler(err => {
+  logger.error(`Exit on uncaught exception: ${err}`)
+})
+
+exitHook.unhandledRejectionHandler(err => {
+  logger.error(`Exit on uncaught rejection: ${err}`)
+})

@@ -63,7 +63,6 @@ module.exports = function watchRx (pattern, basedir) {
         watcher = cache
       } else {
         watcher = chokidar.watch(pattern)
-        // watcher.removeAllListeners()
         watcherCache.set(key, watcher)
       }
 

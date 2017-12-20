@@ -89,7 +89,7 @@ export default {
           node = node.querySelector('.lang-html')
           break
         }
-         node = node.parentNode
+        node = node.parentNode
       }
 
       return node

@@ -1,11 +1,17 @@
 const express = require('express')
-const serverRenderer = require('vue-server-renderer')
+const ssr = require('vue-server-renderer')
+const exitHook = require('async-exit-hook')
+const gracefulExit = require('express-graceful-exit')
+
 const createApp = require('../../dist/ssr')
 const logger = require('./logger')
 
-const server = express()
-const renderer = serverRenderer
-  .createRenderer({ template: '<!--vue-ssr-outlet-->' })
+const app = express()
+const renderer = ssr.createRenderer({
+  template: '<!--vue-ssr-outlet-->'
+})
+
+app.use(gracefulExit.middleware(app))
 
 module.exports = {
   started: false,
@@ -35,32 +41,37 @@ module.exports = {
       this.started = true
     }
 
-    if (!this.port) {
-      const port = new Date().getFullYear()
-      this.port = port
-      server.listen(port)
-      logger.info('Server listening on port: ', port)
+    // avoid tcp port collision
+    if (port !== this.port) {
+      this.port = port || new Date().getFullYear()
+      const server = app.listen(this.port)
+      logger.info('Server listening on port: ', this.port)
+
+      exitHook(() => {
+        logger.info('Express server exits gracefully.')
+        gracefulExit.gracefulExitHandler(app, server, {})
+      })
     }
 
     return this
   },
 
   serveStatic () {
-    server.use('/static', (...args) => {
+    app.use('/static', (...args) => {
       express.static(this.staticDir)(...args)
     })
   },
 
   serveFavico () {
-    server.use('/favicon.ico', (_, res) => res.end(''))
+    app.use('/favicon.ico', (_, res) => res.end(''))
   },
 
   serveSse () {
-    server.use('/__sse__', this.sse.init)
+    app.use('/__sse__', this.sse.init)
   },
 
   serveOthers () {
-    server.get('*', (req, res) => {
+    app.get('*', (req, res) => {
       const { hash, externals, ssrConfig } = this
       if (this.routerMode !== 'history') {
         res.set('Content-Type', 'text/html')
