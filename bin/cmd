@@ -1,2 +1,25 @@
 #!/usr/bin/env node
-require('../dist/bin')
+const path = require('path')
+const {
+  readFileSync, existsSync
+} = require('fs-extra')
+const jsYaml = require('js-yaml')
+const dokivRun = require('../dist/dokivRun')
+
+const npmPrefix = process.env.NPM_PREFIX
+const ymlfile = path.resolve(npmPrefix, 'dokiv.yml')
+
+const argvs = process.argv.slice(2)
+const isWatch = ['-w', '--watch'].indexOf(argvs[0]) > -1
+
+if (existsSync(ymlfile) === false) {
+  console.error(`dokiv.yml not found under ` +
+    `current working directory!`
+  )
+  process.exit()
+} else {
+  const content = readFileSync(ymlfile, 'utf-8')
+  const config = jsYaml.safeLoad(content)
+  config.isProd = isWatch
+  dokivRun(config)
+}

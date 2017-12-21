@@ -30,8 +30,8 @@ const external = Object.keys(deps).concat(builtins)
 export default {
   input: 'src/index.js',
   output: {
-    name: 'test',
-    file: 'dist/bin.js',
+    name: 'dokivRun',
+    file: 'dist/dokivRun.js',
     format: 'cjs',
     sourcemap: false,
     strict: true

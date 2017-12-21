@@ -21,7 +21,7 @@ module.exports = (file, markdown) => {
     highlight,
     body = '# Not Found',
     layout = 'default',
-    meta = {},
+    meta = {}
   } = loadFront(markdown, 'body')
 
   meta.title = meta.title || title

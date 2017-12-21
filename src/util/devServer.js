@@ -19,19 +19,25 @@ module.exports = {
 
   config ({
     sse,
-    hash,
     port,
+    bundles,
     staticDir,
     ssrConfig,
     routerMode,
     externals = {}
   }) {
     this.sse = sse
-    this.hash = hash
+    this.bundles = bundles
     this.staticDir = staticDir
     this.ssrConfig = ssrConfig
     this.routerMode = routerMode
     this.externals = getExternals(externals)
+
+    this.hash = Object.keys(bundles)
+      .reduce((acc, key) => {
+        acc[key] = bundles[key].hash
+        return acc
+      }, {})
 
     if (this.started === false) {
       this.serveFavico()
@@ -57,6 +63,19 @@ module.exports = {
   },
 
   serveStatic () {
+    const regex = /^\/static\/(style|vendor|app)\.([a-z0-9]+)\.(css|js)/
+
+    app.use(regex, (req, res) => {
+      const type = req.params[0]
+      const { content } = this.bundles[type]
+
+      if (type !== 'style') {
+        res.set('Content-Type', 'application/javascript')
+      }
+
+      res.end(content)
+    })
+
     app.use('/static', (...args) => {
       express.static(this.staticDir)(...args)
     })

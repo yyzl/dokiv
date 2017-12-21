@@ -35,7 +35,7 @@ module.exports = function ({
     module.exports = ${appConfig};
   `
 
-  const isProd = process.env.DOCKIV_ENV === 'production'
+  const isProd = process.env.DOKIV_ENV === 'production'
   const browser = isProd ? require('uglify-js').minify(client).code : client
 
   return {
