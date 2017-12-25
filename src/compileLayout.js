@@ -13,9 +13,11 @@ module.exports = function compileLayoutFile (file, content) {
     .then(content => {
       const hash = revHash(content)
       const cache = lruCache.get(hash)
+
       if (cache) {
         return cache
       }
+
       return compileVueWithoutStyle(content, pascalCase(fileName))
         .then(compiled => {
           const ret = `

@@ -31,8 +31,8 @@ module.exports = function (...args) {
 
   const [
     documents,
-    plugins,
     layouts,
+    plugins,
     style,
     vendor,
     configuration
@@ -118,6 +118,7 @@ module.exports = function (...args) {
         process.exit()
       })
   } else {
+    logger.info('Page reloading...')
     sse.send({ type: 'reload' })
   }
 

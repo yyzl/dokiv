@@ -23,7 +23,7 @@ const getMetadata = require('./util/getMetadata')
 const subscriber = require('./subscriber')
 const postCSS = require('./postCSS')
 const compileLayout = require('./compileLayout')
-const compilePlugin = require('./compilePlugin')
+const bundlePlugins = require('./bundlePlugins')
 
 module.exports = function (configuration$) {
   const npmPrefix = process.env.NPM_PREFIX
@@ -32,11 +32,9 @@ module.exports = function (configuration$) {
     .pluck('globs')
     .map(({
       layouts,
-      plugins,
       documents
     }) => ({
       layouts: globby.sync(layouts).length,
-      plugins: globby.sync(plugins).length,
       documents: globby.sync(documents).length
     }))
 
@@ -85,37 +83,11 @@ module.exports = function (configuration$) {
   )
 
   const plugins$ = configuration$
-    .flatMap(conf => {
-      const { globs: { plugins } } = conf
-      return rxWatch(plugins, npmPrefix)
-    })
-    .do(({ event, file }) =>
-      logger.info(`Plugin ${event.replace(/e?$/, 'ed')}: ${file}`)
-    )
-    .scan((map, { event, file }) => {
-      map = map || new Map()
-      if (event === 'unlink') {
-        map.delete(file)
-      } else if (event === 'add' || event === 'change') {
-        map.set(file, compilePlugin(file))
-      }
-      return map
-    }, null)
-    .flatMap(map =>
-      Promise.all(Array.from(map.keys()).map(file => map.get(file)))
-    )
-    .map(data => {
-      let code = data.map(({ code }) => code).join('\n')
-      code += `\nvar Plugins = [`
-      code += data
-        .map(({ name }) => `typeof ${name} !== 'undefined' && ${name}`)
-        .join(',\n')
-      code += '\n]'
-
-      return {
-        code,
-        count: data.length
-      }
+    .pluck('globs', 'plugins')
+    .switchMap(glob => globby(glob))
+    .switchMap(files => bundlePlugins(files))
+    .map(code => {
+      return { code }
     })
 
   const layouts$ = configuration$
@@ -218,8 +190,8 @@ module.exports = function (configuration$) {
 
   const streams = [
     documents$,
-    plugins$,
     layouts$,
+    plugins$,
     style$,
     vendor$,
     configuration$
@@ -230,11 +202,9 @@ module.exports = function (configuration$) {
     .skipWhile(([
       counts,
       documents,
-      pluginBundle,
       layoutBundle
     ]) => {
       return counts.documents > documents.count ||
-        counts.plugins > pluginBundle.count ||
         counts.layouts > layoutBundle.count
     })
     .map(([_, ...rest]) => rest)

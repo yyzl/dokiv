@@ -52,7 +52,7 @@ Suppose your `rootDir` is `docs`, following subdirs are required.
 
 - `docs/static`: static contents
 - `docs/plugins`: JavaScript modules, each exposes an `install` method where variable `Vue` will be injected
-- `docs/layouts`: `.vue` files(single file Vue components) for various type of layouts
+- `docs/layouts`: `.vue` files(single file Vue components) for various types of layouts
 
 ## Markdown Rule
 
