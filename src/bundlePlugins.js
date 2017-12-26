@@ -84,7 +84,10 @@ export default function compilePlugin (files) {
     output: [outputOptions],
     watch: {
       chokidar,
-      exclude: ['node_modules/**']
+      exclude: [
+        'node_modules/**',
+        '**/*.css'
+      ]
     }
   }
 
