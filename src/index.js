@@ -14,6 +14,14 @@ import bootstrap from './bootstrap'
 
 global.Promise = Promise
 
+// http://bluebirdjs.com/docs/api/promise.config.html
+Promise.config({
+  // Enables all warnings except forgotten return statements.
+  warnings: {
+    wForgottenReturn: false
+  }
+})
+
 const npmPrefix = prettyPath(
   exec('npm prefix', { silent: true })
 )
