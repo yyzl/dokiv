@@ -17,11 +17,11 @@ const expressSse = new SSE([{ type: 'init' }])
 
 const logger = require('./util/logger')
 const md2vue = require('./util/md2vue')
+const postCSS = require('./util/postCSS')
 const rxWatch = require('./util/rxWatch')
 const getMetadata = require('./util/getMetadata')
 
 const subscriber = require('./subscriber')
-const postCSS = require('./postCSS')
 const compileLayout = require('./compileLayout')
 const bundlePlugins = require('./bundlePlugins')
 

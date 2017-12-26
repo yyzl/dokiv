@@ -44,7 +44,7 @@ export default {
       extensions: [ '.js', '.json' ],
       preferBuiltins: true
     }),
-    commonjs(),
+    // commonjs(),
     json(),
     buble()
   ]

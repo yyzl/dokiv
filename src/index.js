@@ -11,6 +11,7 @@ const { exec } = require('shelljs')
 const { Observable } = require('rxjs')
 const exitHook = require('async-exit-hook')
 const logger = require('./util/logger')
+const rollup = require('./util/rollup')
 const bootstrap = require('./bootstrap')
 
 const npmPrefix = prettyPath(
@@ -39,6 +40,10 @@ module.exports = function (config, watch) {
     : 'production'
   processConfig(config)
   bootstrap(Observable.of(config))
+
+  if (config.isRollup && config.libary) {
+    rollup(config.libary)
+  }
 }
 
 // Error handling
