@@ -6,4 +6,3 @@ rollup/
 *.sublime-workspace
 dokiv.yml
 .vscode/
-lib/

@@ -9,7 +9,7 @@ function isContents (contents) {
   return typeof contents === 'string' || Buffer.isBuffer(contents)
 }
 
-module.exports = function memory (config = {}) {
+export default function memory (config = {}) {
   let path = isPath(config.path) ? config.path : null
   let contents = isContents(config.contents) ? String(config.contents) : null
 

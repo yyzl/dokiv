@@ -1,12 +1,12 @@
-const { basename } = require('path')
-const { readFile } = require('fs-extra')
-const LRU = require('lru-cache')
-const revHash = require('rev-hash')
-const pascalCase = require('./util/pascalCase')
-const compileVueWithoutStyle = require('./util/compileVueWithoutStyle')
+import { basename } from 'path'
+import { readFile } from 'fs-extra'
+import LRU from 'lru-cache'
+import revHash from 'rev-hash'
+import pascalCase from './util/pascalCase'
+import compileVueWithoutStyle from './util/compileVueWithoutStyle'
 const lruCache = new LRU()
 
-module.exports = function compileLayoutFile (file, content) {
+export default function compileLayoutFile (file, content) {
   const fileName = basename(file, '.vue')
 
   return readFile(file, 'utf-8')

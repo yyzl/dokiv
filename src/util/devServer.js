@@ -1,10 +1,9 @@
-const express = require('express')
-const ssr = require('vue-server-renderer')
-const exitHook = require('async-exit-hook')
-const gracefulExit = require('express-graceful-exit')
-
-const createApp = require('../../dist/ssr')
-const logger = require('./logger')
+import express from 'express'
+import ssr from 'vue-server-renderer'
+import exitHook from 'async-exit-hook'
+import gracefulExit from 'express-graceful-exit'
+import createApp from '../../lib/render'
+import logger from './logger'
 
 const app = express()
 const renderer = ssr.createRenderer({
@@ -13,7 +12,7 @@ const renderer = ssr.createRenderer({
 
 app.use(gracefulExit.middleware(app))
 
-module.exports = {
+export default {
   started: false,
   see: null,
 

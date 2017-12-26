@@ -1,17 +1,17 @@
-const md2vue = require('md2vue')
-const Prepack = require('prepack')
-const revHash = require('rev-hash')
-const LRU = require('lru-cache')
-const isEqual = require('lodash.isequal')
+import md2vue from 'md2vue'
+import Prepack from 'prepack'
+import revHash from 'rev-hash'
+import LRU from 'lru-cache'
+import isEqual from 'lodash.isequal'
 
-const prodEnv = require('./prodEnv')
+import prodEnv from './prodEnv'
 
 const lrucCache = new LRU()
 
 /**
  * compile markdown to precompiled vue component
  */
-module.exports = function compileVue ({
+export default function compileVue ({
   meta,
   markdown,
   highlight,

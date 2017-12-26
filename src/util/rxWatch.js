@@ -11,9 +11,9 @@
  *
  */
 
-const path = require('path')
-const chokidar = require('chokidar')
-const { Observable } = require('rxjs')
+import path from 'path'
+import chokidar from 'chokidar'
+import { Observable } from 'rxjs'
 
 class GlobResultFile {
   get fullname () {
@@ -51,7 +51,7 @@ class GlobResultFile {
 
 const watcherCache = new Map()
 
-module.exports = function watchRx (pattern, basedir) {
+export default function watchRx (pattern, basedir) {
   return Observable
     .create((observer) => {
       let isFinished = false

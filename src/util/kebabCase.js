@@ -1,4 +1,4 @@
-module.exports = function kebabCase (name) {
+export default function kebabCase (name) {
   return name
     .replace(/^[A-Z]/, m => m.toLowerCase())
     .replace(

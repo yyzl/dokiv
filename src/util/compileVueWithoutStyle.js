@@ -1,8 +1,8 @@
-const buble = require('buble')
-const { compiler } = require('vueify')
-const { parseComponent } = require('vue-template-compiler')
+import buble from 'buble'
+import { compiler } from 'vueify'
+import { parseComponent } from 'vue-template-compiler'
 
-const prodEnv = require('./prodEnv')
+import prodEnv from './prodEnv'
 
 compiler.applyConfig({
   extractCSS: true,
@@ -19,7 +19,7 @@ compiler.applyConfig({
   }
 })
 
-module.exports = (content = '', filePath = '') => {
+export default (content = '', filePath = '') => {
   let { template, script } = parseComponent(content)
   const isPug = ['jade', 'pug'].includes(template.attrs.lang)
   script = !script ? 'module.exports = {}' : script.content

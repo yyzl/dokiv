@@ -1,11 +1,4 @@
 /**
- * Convert CommonJS modules to ES6,
- * so they can be includedin a Rollup bundle
- * SEE https://github.com/rollup/rollup-plugin-commonjs
- */
-import commonjs from 'rollup-plugin-commonjs'
-
-/**
  * Locate modules using the Node resolution algorithm,
  * for using third party modules in node_modules
  * SEE https://github.com/rollup/rollup-plugin-node-resolve
@@ -23,15 +16,15 @@ import json from 'rollup-plugin-json'
  */
 import buble from 'rollup-plugin-buble'
 
-const deps = require('../package.json').dependencies
+const deps = require('./package.json').dependencies
 const builtins = require('builtin-modules/builtin-modules.json')
 const external = Object.keys(deps).concat(builtins)
 
 export default {
   input: 'src/index.js',
   output: {
-    name: 'dokivRun',
-    file: 'dist/dokivRun.js',
+    name: 'dokiv',
+    file: 'dist/dokiv.js',
     format: 'cjs',
     sourcemap: false,
     strict: true
@@ -44,7 +37,6 @@ export default {
       extensions: [ '.js', '.json' ],
       preferBuiltins: true
     }),
-    // commonjs(),
     json(),
     buble()
   ]

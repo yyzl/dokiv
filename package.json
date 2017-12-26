@@ -1,14 +1,10 @@
 {
   "name": "dokiv",
-  "version": "1.2.0",
+  "version": "2.0.0",
   "description": "A document generator with vue and markdown",
-  "main": "dist/dokivRun.js",
+  "main": "dist/dokiv.js",
   "scripts": {
-    "dokiv": "rollup -c rollup/dokiv.js",
-    "ssr": "cross-env NODE_ENV=production rollup -c rollup/ssr.js",
-    "client:dev": "cross-env NODE_ENV=development rollup -c rollup/client.js",
-    "client:prod": "cross-env NODE_ENV=production rollup -c rollup/client.js",
-    "build": "rimraf dist/ && run-s ssr client:dev client:prod dokiv"
+    "build": "rimraf dist/ &&rollup -c rollup.config.js"
   },
   "bin": "./bin/cmd",
   "repository": {

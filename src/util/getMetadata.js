@@ -1,12 +1,12 @@
-const { readFileSync } = require('fs-extra')
-const { basename, extname } = require('path')
-const { loadFront } = require('yaml-front-matter')
-const pascalCase = require('./pascalCase')
+import { readFileSync } from 'fs-extra'
+import { basename, extname } from 'path'
+import { loadFront } from 'yaml-front-matter'
+import pascalCase from './pascalCase'
 
 /**
  * extract front matters and document from markdown file
  */
-module.exports = (file, markdown) => {
+export default (file, markdown) => {
   if (typeof markdown === 'undefined') {
     markdown = readFileSync(file, 'utf-8')
   }

@@ -1,25 +1,25 @@
-const { resolve } = require('path')
-const {
+import { resolve } from 'path'
+import {
   readFileSync, existsSync
-} = require('fs-extra')
+} from 'fs-extra'
 
-const Promise = require('bluebird')
+import Promise from 'bluebird'
+import jsYaml from 'js-yaml'
+import { exec } from 'shelljs'
+import { Observable } from 'rxjs'
+import exitHook from 'async-exit-hook'
+import logger from './util/logger'
+import rollup from './util/rollup'
+import bootstrap from './bootstrap'
+
 global.Promise = Promise
-
-const jsYaml = require('js-yaml')
-const { exec } = require('shelljs')
-const { Observable } = require('rxjs')
-const exitHook = require('async-exit-hook')
-const logger = require('./util/logger')
-const rollup = require('./util/rollup')
-const bootstrap = require('./bootstrap')
 
 const npmPrefix = prettyPath(
   exec('npm prefix', { silent: true })
 )
 process.env.NPM_PREFIX = npmPrefix
 
-module.exports = function (config, watch) {
+export default function (config, watch) {
   // yaml file
   if (typeof config === 'string') {
     if (existsSync(config)) {
@@ -38,11 +38,16 @@ module.exports = function (config, watch) {
   process.env.DOKIV_ENV = config.isProd
     ? 'development'
     : 'production'
-  processConfig(config)
-  bootstrap(Observable.of(config))
 
   if (config.isRollup && config.libary) {
-    rollup(config.libary)
+    return rollup(config.libary).then(() => {
+      logger.info('Extra libary bundling done')
+      processConfig(config)
+      bootstrap(Observable.of(config))
+    })
+  } else {
+    processConfig(config)
+    bootstrap(Observable.of(config))
   }
 }
 

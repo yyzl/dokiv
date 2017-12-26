@@ -1,17 +1,17 @@
-const vm = require('vm')
-const { join } = require('path')
-const {
+import vm from 'vm'
+import { join } from 'path'
+import {
   writeFile,
   ensureFile,
   writeFileSync,
   ensureFileSync
-} = require('fs-extra')
+} from 'fs-extra'
 
-const revHash = require('rev-hash')
-const request = require('request-promise')
-const bundlePages = require('./util/bundlePages')
-const devServer = require('./util/devServer')
-const logger = require('./util/logger')
+import revHash from 'rev-hash'
+import request from 'request-promise'
+import bundlePages from './util/bundlePages'
+import devServer from './util/devServer'
+import logger from './util/logger'
 
 const noop = () => {}
 const sandBox = {
@@ -26,7 +26,7 @@ const sandBox = {
   module: {}
 }
 
-module.exports = function (...args) {
+export default function (...args) {
   const isProd = process.env.DOKIV_ENV === 'production'
 
   const [

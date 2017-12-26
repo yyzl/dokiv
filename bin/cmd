@@ -4,7 +4,7 @@ const {
   readFileSync, existsSync
 } = require('fs-extra')
 const jsYaml = require('js-yaml')
-const dokivRun = require('../dist/dokivRun')
+const dokiv = require('../dist/dokiv')
 
 const npmPrefix = process.env.NPM_PREFIX
 const ymlfile = path.resolve(npmPrefix, 'dokiv.yml')
@@ -23,5 +23,5 @@ if (existsSync(ymlfile) === false) {
   const config = jsYaml.safeLoad(content)
   config.isProd = isWatch
   config.isRollup = isRollup
-  dokivRun(config)
+  dokiv(config)
 }

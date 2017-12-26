@@ -1,31 +1,31 @@
-const { resolve } = require('path')
-const {
+import { resolve } from 'path'
+import {
   copy,
-  readFile,
   emptyDir,
   ensureDir
-} = require('fs-extra')
+} from 'fs-extra'
 
-const opn = require('opn')
-const globby = require('globby')
-const getPort = require('get-port')
-const revHash = require('rev-hash')
-const { Observable } = require('rxjs')
+import opn from 'opn'
+import globby from 'globby'
+import getPort from 'get-port'
+import revHash from 'rev-hash'
+import { Observable } from 'rxjs'
 
-const SSE = require('express-sse')
+import SSE from 'express-sse'
+import logger from './util/logger'
+import rollup from './util/rollup'
+import md2vue from './util/md2vue'
+import postCSS from './util/postCSS'
+import rxWatch from './util/rxWatch'
+import getMetadata from './util/getMetadata'
+
+import subscriber from './subscriber'
+import compileLayout from './compileLayout'
+import bundlePlugins from './bundlePlugins'
+
 const expressSse = new SSE([{ type: 'init' }])
 
-const logger = require('./util/logger')
-const md2vue = require('./util/md2vue')
-const postCSS = require('./util/postCSS')
-const rxWatch = require('./util/rxWatch')
-const getMetadata = require('./util/getMetadata')
-
-const subscriber = require('./subscriber')
-const compileLayout = require('./compileLayout')
-const bundlePlugins = require('./bundlePlugins')
-
-module.exports = function (configuration$) {
+export default function (configuration$) {
   const npmPrefix = process.env.NPM_PREFIX
 
   const productionCounts$ = configuration$
@@ -49,18 +49,21 @@ module.exports = function (configuration$) {
 
   const vendor$ = configuration$
     .switchMap(({ output, staticOutput }) => {
-      const bundle = resolve(
-        __dirname,
-        `../dist/bundle.${process.env.DOKIV_ENV}.js`
-      )
-
-      return readFile(bundle)
-        .then(content => {
-          const hash = revHash(content)
-          const dest = `${staticOutput}/vendor.${hash}.js`
-
-          return { dest, content, hash }
-        })
+      const isProd = process.env.DOKIV_ENV === 'production'
+      return rollup({
+        input: resolve(__dirname, '../lib/render.js'),
+        name: 'createApp',
+        uglify: isProd,
+        output: {
+          format: 'iife',
+          sourcemap: !isProd ? 'inline' : false
+        }
+      }).then(([{ code }]) => {
+        const hash = revHash(code)
+        const dest = `${staticOutput}/vendor.${hash}.js`
+        logger.info('Vendor bundling done')
+        return { dest, hash, content: code }
+      })
     })
 
   const style$ = configuration$.switchMap(

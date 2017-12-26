@@ -1,23 +1,23 @@
-const os = require('os')
-const {
+import os from 'os'
+import {
   join,
   resolve
-} = require('path')
+} from 'path'
 
-const {
+import {
   readFile,
   ensureFile
-} = require('fs-extra')
+} from 'fs-extra'
 
-const { exec } = require('shelljs')
-const revHash = require('rev-hash')
-const chokidar = require('chokidar')
-const { Observable } = require('rxjs')
-const debounce = require('lodash.debounce')
+import { exec } from 'shelljs'
+import revHash from 'rev-hash'
+import chokidar from 'chokidar'
+import { Observable } from 'rxjs'
+import debounce from 'lodash.debounce'
 
 const tempdir = join(os.tmpdir(), 'dokiv-css-temp')
 
-module.exports = function ({
+export default function ({
   entry,
   plugins = [],
   minify = false,

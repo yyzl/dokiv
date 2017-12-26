@@ -1,8 +1,8 @@
-const chalk = require('chalk')
+import chalk from 'chalk'
 const reTime = /\d{2}:\d{2}:\d{2}/
 const time = () => new Date().toString().match(reTime)[0]
 
-module.exports = {
+export default {
   info (...msg) {
     console.log(
       `[%s] [%s] %s`,

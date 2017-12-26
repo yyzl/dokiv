@@ -1,7 +1,7 @@
 /**
  * generate bundle of pages
  */
-module.exports = function ({
+export default function ({
   code = [],
   routers = [],
   mode = 'hash'

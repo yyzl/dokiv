@@ -1,23 +1,25 @@
-const {
-  extname, basename, join
-} = require('path')
-const os = require('os')
-const rollup = require('rollup')
-const { readFile } = require('fs-extra')
-const chokidar = require('chokidar')
-const { Observable } = require('rxjs')
+import {
+  extname, basename, join, resolve
+} from 'path'
+import os from 'os'
+import rollup from 'rollup'
+import { readFile } from 'fs-extra'
+import chokidar from 'chokidar'
+import { Observable } from 'rxjs'
 
-const vue = require('rollup-plugin-vue')
-const json = require('rollup-plugin-json')
-const buble = require('rollup-plugin-buble')
-const replace = require('rollup-plugin-replace')
-const globImport = require('rollup-plugin-glob')
-const commonjs = require('rollup-plugin-commonjs')
-const nodeResolve = require('rollup-plugin-node-resolve')
+import vue from 'rollup-plugin-vue'
+import json from 'rollup-plugin-json'
+import buble from 'rollup-plugin-buble'
+import alias from 'rollup-plugin-alias'
+import replace from 'rollup-plugin-replace'
+import globImport from 'rollup-plugin-glob'
+import commonjs from 'rollup-plugin-commonjs'
+import nodeResolve from 'rollup-plugin-node-resolve'
 
-const logger = require('./util/logger')
-const pascalCase = require('./util/pascalCase')
-const pluginMemory = require('./util/rollupPluginMemory')
+import logger from './util/logger'
+import pascalCase from './util/pascalCase'
+import pluginMemory from './util/rollupPluginMemory'
+
 const tempdir = join(os.tmpdir(), 'dokiv-rollup-temp')
 
 const prettyPath = function (p) {
@@ -51,7 +53,7 @@ const plugins = [
   buble()
 ]
 
-module.exports = function compilePlugin (files) {
+export default function compilePlugin (files) {
   const tempfile = join(tempdir, 'plugins')
   const entryContent = files.map(file => {
     const name = pascalCase(basename(file, extname(file)))
@@ -66,12 +68,14 @@ module.exports = function compilePlugin (files) {
     file: tempfile
   }
 
+  const vue = resolve(process.env.NPM_PREFIX, 'node_modules/vue/dist/vue.esm.js')
   const inputOptions = {
     plugins: [
       pluginMemory({
         path: 'virtualPluginBundle.js',
         contents: entryContent
       }),
+      alias({ vue }),
       globImport(),
       cssNoop(),
       ...plugins
