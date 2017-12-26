@@ -30,7 +30,7 @@ const cssNoop = function () {
   return {
     transform (code, id) {
       if (/\.css$/.test(id)) {
-        logger.info(`Skipped CSS import: ${id}`)
+        // logger.info(`Skipped CSS import: ${id}`)
         return 'export default {}'
       }
     }
@@ -63,7 +63,7 @@ export default function compilePlugin (files) {
   const outputOptions = {
     name: 'Plugins',
     format: 'iife',
-    sourcemap: 'false',
+    sourcemap: false,
     strict: true,
     file: tempfile
   }
