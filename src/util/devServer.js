@@ -68,7 +68,9 @@ export default {
       const type = req.params[0]
       const { content } = this.bundles[type]
 
-      if (type !== 'style') {
+      if (type === 'style') {
+        res.set('Content-Type', 'text/css')
+      } else {
         res.set('Content-Type', 'application/javascript')
       }
 
