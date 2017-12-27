@@ -11,6 +11,7 @@ import vue from 'rollup-plugin-vue'
 import json from 'rollup-plugin-json'
 import buble from 'rollup-plugin-buble'
 import alias from 'rollup-plugin-alias'
+import svgVue from 'rollup-plugin-svg-vue'
 import replace from 'rollup-plugin-replace'
 import globImport from 'rollup-plugin-glob'
 import commonjs from 'rollup-plugin-commonjs'
@@ -75,6 +76,7 @@ export default function compilePlugin (files) {
         path: 'virtualPluginBundle.js',
         contents: entryContent
       }),
+      svgVue(),
       alias({ vue }),
       globImport(),
       cssNoop(),
