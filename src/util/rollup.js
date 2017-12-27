@@ -1,11 +1,11 @@
 import { resolve } from 'path'
 import { rollup } from 'rollup'
-import { ensureFileSync } from 'fs-extra'
 
 import vue from 'rollup-plugin-vue'
 import json from 'rollup-plugin-json'
 import buble from 'rollup-plugin-buble'
 import alias from 'rollup-plugin-alias'
+import svgVue from 'rollup-plugin-svg-vue'
 import uglifyJS from 'rollup-plugin-uglify'
 import replace from 'rollup-plugin-replace'
 import globImport from 'rollup-plugin-glob'
@@ -70,6 +70,7 @@ export default function ({ input, output, uglify, postcss }) {
   const inputOption = {
     input,
     plugins: [
+      svgVue(),
       globImport(),
       alias({
         vue: resolve(
