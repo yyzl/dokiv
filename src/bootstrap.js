@@ -52,9 +52,9 @@ export default function (configuration$) {
       const isProd = process.env.DOKIV_ENV === 'production'
       return rollup({
         input: resolve(__dirname, '../lib/render.js'),
-        name: 'createApp',
         uglify: isProd,
         output: {
+          name: 'createApp',
           format: 'iife',
           sourcemap: !isProd ? 'inline' : false
         }

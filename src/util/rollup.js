@@ -26,7 +26,9 @@ const plugins = [
     'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV)
   }),
   json(),
-  buble()
+  buble({
+    objectAssign: 'Object.assign'
+  })
 ]
 
 const cssNoop = {
@@ -37,9 +39,10 @@ const cssNoop = {
   }
 }
 
-export default function ({ input, name, output, uglify, postcss }) {
-  let cssPlugin = null
+export default function ({ input, output, uglify, postcss }) {
+  input = resolve(process.env.NPM_PREFIX, input)
 
+  let cssPlugin = null
   if (postcss) {
     const { extract, minify, sourcemap } = postcss
     const plugins = postcss.plugins.reduce((acc, item) => {
@@ -64,12 +67,16 @@ export default function ({ input, name, output, uglify, postcss }) {
     })
   }
 
-  const vue = resolve(process.env.NPM_PREFIX, 'node_modules/vue/dist/vue.esm.js')
-  const inputOptions = {
+  const inputOption = {
     input,
     plugins: [
       globImport(),
-      alias({ vue }),
+      alias({
+        vue: resolve(
+          process.env.NPM_PREFIX,
+          'node_modules/vue/dist/vue.esm.js'
+        )
+      }),
       cssPlugin || cssNoop,
       ...plugins,
       uglify ? uglifyJS() : {}
@@ -78,10 +85,35 @@ export default function ({ input, name, output, uglify, postcss }) {
 
   output = [].concat(output)
 
-  return rollup(inputOptions).then(bundle => Promise.all(
-    output.map(item => {
-      item.name = name
-      return item.file ? bundle.write(item) : bundle.generate(item)
+  return rollup(inputOption).then(bundle => Promise.all(
+    output.map(option => {
+      const { externals, file } = option
+      const type = file ? 'write' : 'generate'
+
+      if (!externals) {
+        return bundle[type](option)
+      }
+
+      const rules = externals.map(rule => {
+        if (rule.indexOf('*') > -1) {
+          return RegExp(rule)
+        }
+        return rule
+      })
+
+      return rollup({
+        external (id) {
+          return rules.some(rule => {
+            if (rule.test) {
+              return rule.test(id)
+            }
+
+            return rule === id
+          })
+        },
+        ...inputOption
+      })
+        .then(bundle => bundle[type](option))
     })
   ))
 }

@@ -38,6 +38,8 @@ export default {
       preferBuiltins: true
     }),
     json(),
-    buble()
+    buble({
+      objectAssign: 'Object.assign'
+    })
   ]
 }
