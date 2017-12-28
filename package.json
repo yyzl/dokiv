@@ -19,7 +19,7 @@
     "buble": "^0.18.0",
     "chalk": "^2.3.0",
     "chokidar": "^1.7.0",
-    "clair-bundle": "^1.0.0",
+    "clair-bundle": "^1.0.2",
     "cssnano": "^3.10.0",
     "eazy-logger": "^3.0.2",
     "express": "^4.16.2",
