@@ -9,7 +9,6 @@ import { exec } from 'shelljs'
 import { Observable } from 'rxjs'
 import exitHook from 'async-exit-hook'
 import logger from './util/logger'
-import rollup from './util/rollup'
 import bootstrap from './bootstrap'
 
 global.Promise = Promise
@@ -47,16 +46,8 @@ export default function (config, watch) {
     ? 'development'
     : 'production'
 
-  if (config.isRollup && config.libary) {
-    return rollup(config.libary).then(() => {
-      logger.info('Extra libary bundling done')
-      processConfig(config)
-      bootstrap(Observable.of(config))
-    })
-  } else {
-    processConfig(config)
-    bootstrap(Observable.of(config))
-  }
+  processConfig(config)
+  bootstrap(Observable.of(config))
 }
 
 // Error handling

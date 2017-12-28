@@ -10,10 +10,10 @@ import globby from 'globby'
 import getPort from 'get-port'
 import revHash from 'rev-hash'
 import { Observable } from 'rxjs'
+import clairBundle from 'clair-bundle'
 
 import SSE from 'express-sse'
 import logger from './util/logger'
-import rollup from './util/rollup'
 import md2vue from './util/md2vue'
 import postCSS from './util/postCSS'
 import rxWatch from './util/rxWatch'
@@ -50,15 +50,20 @@ export default function (configuration$) {
   const vendor$ = configuration$
     .switchMap(({ output, staticOutput }) => {
       const isProd = process.env.DOKIV_ENV === 'production'
-      return rollup({
-        input: resolve(__dirname, '../lib/render.js'),
-        uglify: isProd,
-        output: {
-          name: 'createApp',
-          format: 'iife',
-          sourcemap: !isProd ? 'inline' : false
-        }
-      }).then(([{ code }]) => {
+      return clairBundle({
+        options: [
+          {
+            input: resolve(__dirname, '../lib/render.js'),
+            output: {
+              name: 'createApp',
+              format: 'iife',
+              sourcemap: !isProd ? 'inline' : false
+            },
+            uglify: isProd
+          }
+        ]
+      }).then(([result]) => {
+        const [{ code }] = result
         const hash = revHash(code)
         const dest = `${staticOutput}/vendor.${hash}.js`
         logger.info('Vendor bundling done')

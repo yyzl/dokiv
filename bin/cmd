@@ -11,7 +11,6 @@ const ymlfile = path.resolve(npmPrefix, 'dokiv.yml')
 
 const argvs = process.argv.slice(2)
 const isWatch = argvs.indexOf('-w') > -1 || argvs.indexOf('--watch') > -1
-const isRollup = argvs.indexOf('-r') > -1 || argvs.indexOf('--rollup') > -1
 
 if (existsSync(ymlfile) === false) {
   console.error(`dokiv.yml not found under ` +
@@ -22,6 +21,5 @@ if (existsSync(ymlfile) === false) {
   const content = readFileSync(ymlfile, 'utf-8')
   const config = jsYaml.safeLoad(content)
   config.isProd = isWatch
-  config.isRollup = isRollup
   dokiv(config)
 }
