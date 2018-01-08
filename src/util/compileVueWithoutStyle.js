@@ -1,4 +1,4 @@
-import buble from 'buble'
+import clairBundle from 'clair-bundle'
 import { compiler } from 'vueify'
 import { parseComponent } from 'vue-template-compiler'
 
@@ -7,14 +7,21 @@ import prodEnv from './prodEnv'
 compiler.applyConfig({
   extractCSS: true,
   customCompilers: {
-    buble (content, cb) {
-      const { code } = buble.transform(content)
-      const ret = code
-        .replace(/\n{2,}/g, '\n')
-        .replace(/^\s+/, '  ')
-        .replace(/\s+$/, '')
-
-      cb(null, ret)
+    clairbundle (content, cb) {
+	  const option = {
+	    input: {
+		  path: 'virtual.js',
+		  contents: content
+		},
+        output: {
+		  format: 'cjs',
+		  sourcemap: false
+		}
+	  }
+	  clairBundle({ options: [option] }).then(([result]) => {
+	    const [{ code }] = result
+	    cb(null, code)
+	  })
     }
   }
 })
@@ -26,7 +33,7 @@ export default (content = '', filePath = '') => {
   script = script.replace(/export default/, 'module.exports =')
 
   const sfc = `<template lang="${isPug ? 'pug' : 'html'}">${template.content}</template>
-<script lang="buble">${script}</script>`
+<script lang="clairbundle">${script}</script>`
 
   return new Promise((resolve, reject) => {
     prodEnv.set()
