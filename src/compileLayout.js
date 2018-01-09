@@ -18,7 +18,7 @@ export default function compileLayoutFile (file, content) {
         return cache
       }
 
-      return compileVueWithoutStyle(content, pascalCase(fileName))
+      return compileVueWithoutStyle(content, file)
         .then(compiled => {
           const ret = `
 "${fileName}": (function () {
