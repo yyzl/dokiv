@@ -2,11 +2,15 @@
  * generate bundle of pages
  */
 import revHash from 'rev-hash'
+
 export default function ({
   code = [],
   routers = [],
   mode = 'hash'
 }) {
+  const uglifyjs = require('uglify-js')
+  const isProd = process.env.DOKIV_ENV === 'production'
+
   const ssrRoutes = routers.map(({ fullPath, component, layout }) => `{
     path: "${fullPath}",
     component: (${component}),
@@ -16,7 +20,9 @@ export default function ({
   const pages = []
   const clientRoutes = routers.map(({ fullPath, component, layout }) => {
     const hash = revHash(component)
-    pages.push({ hash, content: `__jsonpResolve("${hash}", ${component})` })
+    const code = `__jsonpResolve("${hash}", ${component})`
+    const content = isProd ? uglifyjs.minify(code).code : code
+    pages.push({ hash, content })
     return `{
       path: "${fullPath}",
       component: function () {
@@ -53,8 +59,7 @@ export default function ({
     module.exports = ${appConfig};
   `
 
-  const isProd = process.env.DOKIV_ENV === 'production'
-  const browser = isProd ? require('uglify-js').minify(client).code : client
+  const browser = isProd ? uglifyjs.minify(client).code : client
 
   return {
     ssr,

@@ -85,10 +85,19 @@ export default function (...args) {
   if (isProd) {
     // write bundles to disk on production
     logger.info(`Writing bundles to disk...`)
-    Object.keys(bundles).forEach(key => {
-      const { dest, content } = bundles[key]
+    const write = ({ dest, content }) => {
       ensureFileSync(dest)
       writeFileSync(dest, content)
+    }
+    Object.keys(bundles).forEach(key => {
+      if (key === 'pages') {
+        const page = bundles[key]
+        Object.keys(page).forEach(key => {
+          write(page[key])
+        })
+      } else {
+        write(bundles[key])
+      }
     })
   }
 
