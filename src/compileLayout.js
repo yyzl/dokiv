@@ -2,7 +2,6 @@ import { basename } from 'path'
 import { readFile } from 'fs-extra'
 import LRU from 'lru-cache'
 import revHash from 'rev-hash'
-import pascalCase from './util/pascalCase'
 import compileVueWithoutStyle from './util/compileVueWithoutStyle'
 const lruCache = new LRU()
 

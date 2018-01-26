@@ -79,7 +79,7 @@ export default function (configuration$) {
         .map(content => {
           const hash = revHash(content)
           const dest = resolve(`${staticOutput}/style.${hash}.css`)
-          logger.info(`Style bundle changed.`)
+          logger.info(`Style bundle changed`)
 
           return {
             dest,
