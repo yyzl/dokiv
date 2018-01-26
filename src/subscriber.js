@@ -50,7 +50,7 @@ export default function (...args) {
     staticSource
   } = configuration
 
-  const { ssr, browser } = bundlePages({
+  const { ssr, browser, pages } = bundlePages({
     routers,
     mode: routerMode,
     code: [
@@ -68,7 +68,19 @@ export default function (...args) {
     dest: `${staticOutput}/app.${hash}.js`
   }
 
-  const bundles = { app, vendor, style }
+  const bundles = {
+    vendor,
+    style,
+    app,
+    pages: pages.reduce((acc, { hash, content }) => {
+      acc[hash] = {
+        hash,
+        content,
+        dest: `${staticOutput}/page.${hash}.js`
+      }
+      return acc
+    }, {})
+  }
 
   if (isProd) {
     // write bundles to disk on production

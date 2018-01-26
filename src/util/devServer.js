@@ -62,11 +62,17 @@ export default {
   },
 
   serveStatic () {
-    const regex = /^\/static\/(style|vendor|app)\.([a-z0-9]+)\.(css|js)/
+    const regex = /^\/static\/(style|vendor|app|page)\.([a-z0-9]+)\.(css|js)/
 
     app.use(regex, (req, res) => {
       const type = req.params[0]
-      const { content } = this.bundles[type]
+      let content = ''
+      if (type === 'page') {
+        const hash = req.params[1]
+        content = this.bundles.pages[hash].content
+      } else {
+        content = this.bundles[type].content
+      }
 
       if (type === 'style') {
         res.set('Content-Type', 'text/css')

@@ -1,12 +1,30 @@
 /**
  * generate bundle of pages
  */
+import revHash from 'rev-hash'
 export default function ({
   code = [],
   routers = [],
   mode = 'hash'
 }) {
-  const routersCode = `var routes = [${routers.join(',\n')}];`
+  const ssrRoutes = routers.map(({ fullPath, component, layout }) => `{
+    path: "${fullPath}",
+    component: (${component}),
+    meta: { layout: "${layout}" }
+  }`).concat('{ path: "*", redirect: "/404" }')
+
+  const pages = []
+  const clientRoutes = routers.map(({ fullPath, component, layout }) => {
+    const hash = revHash(component)
+    pages.push({ hash, content: `__jsonpResolve("${hash}", ${component})` })
+    return `{
+      path: "${fullPath}",
+      component: function () {
+        return createApp.jsonp("${hash}")
+      },
+      meta: { layout: "${layout}" }
+    }`
+  }).concat('{ path: "*", redirect: "/404" }')
 
   const appConfig = `{
     el: "#app",
@@ -24,14 +42,14 @@ export default function ({
   const client = `
     ;(function (){
     ${code.join(';')}
-    ${routersCode}
+    var routes = [${clientRoutes.join(',\n')}];
     createApp(${appConfig});
     }());
   `
 
   const ssr = `
     ${code.join(';')}
-    ${routersCode}
+    var routes = [${ssrRoutes.join(',\n')}];
     module.exports = ${appConfig};
   `
 
@@ -40,6 +58,7 @@ export default function ({
 
   return {
     ssr,
-    browser
+    browser,
+    pages
   }
 }

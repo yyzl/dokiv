@@ -4,7 +4,7 @@
   "description": "A document generator with vue and markdown",
   "main": "dist/dokiv.js",
   "scripts": {
-    "build": "rimraf dist/ &&rollup -c rollup.config.js"
+    "build": "rimraf dist/ && rollup -c rollup.config.js"
   },
   "bin": "./bin/cmd",
   "repository": {

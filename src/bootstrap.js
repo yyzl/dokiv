@@ -179,19 +179,9 @@ export default function (configuration$) {
     )
     .map(metadatas => {
       const paths = metadatas.map(i => i.fullPath)
-      const routers = metadatas
-        .map(
-          ({ component, layout, fullPath }) => `{
-            path: "${fullPath}",
-            component: (${component}),
-            meta: { layout: "${layout}" }
-          }`
-        )
-        .concat('{ path: "*", redirect: "/404" }')
-
       return {
         paths,
-        routers,
+        routers: metadatas,
         count: metadatas.length
       }
     })
