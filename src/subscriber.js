@@ -7,6 +7,7 @@ import {
   ensureFileSync
 } from 'fs-extra'
 
+import swPrecache from 'sw-precache'
 import revHash from 'rev-hash'
 import request from 'request-promise'
 import bundlePages from './util/bundlePages'
@@ -134,9 +135,17 @@ export default function (...args) {
 
     Promise
       .all(promises)
+      .then(() => logger.info('SSR done'))
       .then(() => {
-        logger.info('SSR done.')
-        process.exit()
+        logger.info('Generating service worker')
+        const glob = `${staticOutput}/**/*.{js,html,css,png,jpg,gif,svg,eot,ttf,woff}`
+        swPrecache.write(`${output}/service-worker.js`, {
+          staticFileGlobs: [glob],
+          stripPrefix: output
+        }, function () {
+          logger.info('Done')
+          process.exit()
+        })
       })
   } else {
     logger.info('Page reloading...')

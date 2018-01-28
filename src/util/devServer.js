@@ -143,6 +143,8 @@ function getResponseHead (injection, hash, externals) {
 
   const arr = [title, link, style, script, noscript, meta]
 
+  const isProd = process.env.DOKIV_ENV === 'production'
+  const registerSw = !isProd ? '' : `<script>if ('serviceWorker' in navigator) {navigator.serviceWorker.register('/service-worker.js')}</script>`
   return `<!doctype html>
 <html data-vue-meta-server-rendered ${htmlAttrs.text()}>
   <head>
@@ -152,6 +154,7 @@ function getResponseHead (injection, hash, externals) {
     ${arr.map(it => it.text()).join('')}
     ${externals.css}
     <link rel="stylesheet" href="/static/style.${hash.style}.css">
+    ${registerSw}
   </head>
   <body ${bodyAttrs.text()}>`
 }
