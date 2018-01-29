@@ -51,7 +51,7 @@ You can take a look at [./dokiv.yml](./example/dokiv.yml).
 Suppose your `rootDir` is `docs`, following subdirs are required.
 
 - `docs/static`: static contents
-- `docs/plugins`: JavaScript modules, each exposes an `install` method where variable `Vue` will be injected
+- `docs/plugins`: JavaScript modules, each can exposes an `install` method with constructor `Vue` injected, and a `routing` method where `router`（VueRouter instance） injected.
 - `docs/layouts`: `.vue` files(single file Vue components) for various types of layouts
 
 ## Markdown Rule
