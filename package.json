@@ -1,6 +1,6 @@
 {
   "name": "dokiv",
-  "version": "2.2.2",
+  "version": "2.2.3",
   "description": "A document generator with vue and markdown",
   "main": "dist/dokiv.js",
   "scripts": {
