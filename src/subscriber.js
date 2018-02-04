@@ -141,7 +141,7 @@ export default function (...args) {
         const glob = `${staticOutput}/**/*.{js,html,css,png,jpg,gif,svg,eot,ttf,woff}`
         swPrecache.write(`${output}/service-worker.js`, {
           staticFileGlobs: [glob],
-          stripPrefix: output.replace(/\//g, '/')
+          stripPrefix: output.replace(/\\/g, '/')
         }, function () {
           logger.info('Done')
           process.exit()
