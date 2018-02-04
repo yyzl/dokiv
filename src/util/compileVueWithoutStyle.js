@@ -30,7 +30,6 @@ export default (content = '', filePath = '') => {
   let { template, script } = parseComponent(content)
   const isPug = ['jade', 'pug'].includes(template.attrs.lang)
   script = !script ? '' : script.content
-  script = script ? script.replace(/export default/, 'module.exports =') : ''
 
   const sfc = `<template lang="${isPug ? 'pug' : 'html'}">
 ${template.content}
