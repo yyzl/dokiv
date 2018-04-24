@@ -1,5 +1,5 @@
 import md2vue from 'md2vue'
-import Prepack from 'prepack'
+import { prepackSources } from 'prepack'
 import revHash from 'rev-hash'
 import LRU from 'lru-cache'
 import isEqual from 'lodash.isequal'
@@ -53,9 +53,14 @@ export default function compileVue ({
     .then(() => md2vue(markdown, conf))
     .then((raw) => {
       prodEnv.restore()
+      const sources = [{
+        filePath: '',
+        fileContents: raw,
+        sourceMapContents: ''
+      }]
       const code = `(function(){
   var ${componentName} = null;
-  ${Prepack.prepack(raw).code};
+  ${prepackSources(sources).code};
   return ${componentName};
 })()`
       lrucCache.set(hash, { meta, code, name: componentName })
