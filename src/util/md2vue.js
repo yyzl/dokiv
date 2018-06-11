@@ -59,9 +59,12 @@ export default function compileVue ({
         sourceMapContents: ''
       }]
       const code = `(function(){
-  var ${componentName} = null;
-  ${prepackSources(sources).code};
-  return ${componentName};
+  var ${componentName} = null
+  function F(){
+    ${prepackSources(sources).code};
+  }
+  var ins = new F();
+  return ${componentName} || ins["${componentName}"]
 })()`
       lrucCache.set(hash, { meta, code, name: componentName })
       return code
